@@ -42,6 +42,13 @@ function H.new(opts)
     for _, m in ipairs(H.MODULES) do if m == k then return h.use(k) end end
   end })
   h.ctx = setmetatable({ h = h }, { __index = function(_, k) return h[k] end })
+  -- write a settings file before init (use as opts.setup = H.cfg("MAP=2\n"))
+  function h.cfg(text)
+    local f = S.realio.open(S.sdroot .. "/SCRIPTS/TOOLS/FREEFPV/freefpv.cfg", "wb")
+    f:write(text)
+    f:close()
+  end
+
   if opts.setup then opts.setup(h) end
   radio(h.app.init)
 
@@ -59,13 +66,6 @@ function H.new(opts)
   -- idle frames (throttle low by default, like a disarmed radio)
   function h.wait(n, ail, ele, thr, rud)
     for _ = 1, n do h.step(ail, ele, thr, rud) end
-  end
-
-  -- write a settings file before init (use as opts.setup = H.cfg("MAP=2\n"))
-  function h.cfg(text)
-    local f = S.realio.open(S.sdroot .. "/SCRIPTS/TOOLS/FREEFPV/freefpv.cfg", "wb")
-    f:write(text)
-    f:close()
   end
 
   function h.fb() return S.fb end

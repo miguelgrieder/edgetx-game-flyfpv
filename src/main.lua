@@ -1,4 +1,7 @@
--- FreeFPV entry: module loader (step 1 stub; the state machine comes later)
+-- FreeFPV entry: module loader, state machine, fixed 50 ms timestep, events, backlight.
+-- The game lives in /SCRIPTS/TOOLS/FREEFPV/*.lua, loaded with loadScript (each file compiles and is
+-- cached as .luac on its own). Only one group is in memory at a time: menus, or flight + render +
+-- the selected map's data.
 local DIR = "/SCRIPTS/TOOLS/FREEFPV/"
 local loaded = {}
 
@@ -15,9 +18,173 @@ local function use(name, nocache)
 end
 
 local config = use("config")
-local state = 1
+local menus, flight, render
 
-local function init() config.load() end
-local function run() lcd.clear() return 0 end
+local WARN, TITLE, SETTINGS, ARM, FLY, PAUSE, CRASH = 1, 2, 3, 4, 5, 6, 7
 
-return { init = init, run = run, use = use, state = function() return state end }
+local state, last, acc = WARN, 0, 0
+local ignoreUntil = 0
+local eatEnter = false -- the ENTER release that follows a long press
+local saveOk, modelName = true, nil
+local count = 0 -- ticks spent in ARM (throttle low) / CRASH
+local psel = 1 -- pause menu: 1 resume, 2 respawn, 3 quit
+local ail, ele, thr, rud = 0, 0, -1024, 0
+
+-- switch the loaded group, freeing the other one first
+local function menuMode()
+  if flight then
+    loaded.flight, loaded.render, flight, render = nil, nil, nil, nil
+    collectgarbage()
+  end
+  if not menus then
+    menus = use("menus")
+    menus.saveOk = saveOk
+    collectgarbage()
+  end
+end
+
+local function flightMode()
+  if menus then
+    loaded.menus, menus = nil, nil
+    collectgarbage()
+  end
+  if not flight then
+    flight = use("flight")
+    render = use("render")
+    flight.load(use(config.MAPFILE[config.v.MAP], true)) -- map data is copied, the file is not kept
+    flight.setup()
+    collectgarbage()
+  end
+end
+
+-- events (virtual + legacy; some constants are nil on some radios)
+local function is(e, a, b, c, d)
+  return e ~= 0 and (e == a or e == b or e == c or e == d)
+end
+local function isEnter(e) return is(e, EVT_VIRTUAL_ENTER, EVT_ENTER_BREAK, EVT_ROT_BREAK) end
+local function isLong(e) return is(e, EVT_VIRTUAL_ENTER_LONG, EVT_ENTER_LONG, EVT_ROT_LONG) end
+local function isExit(e) return is(e, EVT_VIRTUAL_EXIT, EVT_EXIT_BREAK) end
+-- encoder, +/- keys or PAGE keys
+local function isNext(e)
+  return is(e, EVT_VIRTUAL_NEXT, EVT_VIRTUAL_INC_REPT, EVT_VIRTUAL_NEXT_PAGE, EVT_PLUS_BREAK)
+end
+local function isPrev(e)
+  return is(e, EVT_VIRTUAL_PREV, EVT_VIRTUAL_DEC_REPT, EVT_VIRTUAL_PREV_PAGE, EVT_MINUS_BREAK)
+end
+
+local function go(s)
+  state = s
+  ignoreUntil = getTime() + 30
+  if s >= ARM then flightMode() else menuMode() end
+  if s == ARM then
+    flight.spawn()
+    count = 0
+  end
+  if s == CRASH then
+    count = 0
+    playTone(200, 300, 0, PLAY_NOW)
+    playHaptic(150, 0, PLAY_NOW)
+  end
+  if s == PAUSE then psel = 1 end
+end
+
+local function readSticks()
+  ail, ele, thr, rud = getValue("ail") or 0, getValue("ele") or 0, getValue("thr") or -1024, getValue("rud") or 0
+end
+
+local function update(e, steps)
+  if state == WARN then
+    if isEnter(e) then go(TITLE) elseif isExit(e) then return 1 end
+  elseif state == TITLE then
+    if isLong(e) then
+      killEvents(e)
+      eatEnter = true
+      menus.sel, menus.editing = 1, false
+      go(SETTINGS)
+    elseif isEnter(e) then go(ARM)
+    elseif isExit(e) then return 1 end
+  elseif state == SETTINGS then
+    local ev = isNext(e) and "next" or isPrev(e) and "prev" or isEnter(e) and "enter" or isExit(e) and "exit"
+    if ev and menus.settingsEvent(ev) then
+      saveOk = config.save()
+      menus.saveOk = saveOk
+      go(TITLE)
+    end
+  elseif state == ARM then
+    -- like a real quad: throttle low to arm
+    if isExit(e) then go(TITLE) return 0 end
+    count = thr < -920 and count + steps or 0
+    if count >= 6 then
+      playTone(1000, 100, 0, PLAY_NOW)
+      state = FLY
+    end
+  elseif state == FLY then
+    if isExit(e) then go(PAUSE) return 0 end
+    for _ = 1, steps do
+      flight.tick(ail, ele, thr, rud)
+      if flight.crashed then go(CRASH) break end
+    end
+  elseif state == CRASH then
+    count = count + steps
+    if count >= 30 or (count >= 6 and isEnter(e)) then go(ARM) end
+  elseif state == PAUSE then
+    if isNext(e) then psel = psel % 3 + 1
+    elseif isPrev(e) then psel = (psel + 1) % 3 + 1
+    elseif isExit(e) then go(TITLE)
+    elseif isEnter(e) then
+      if psel == 1 then state = FLY elseif psel == 2 then go(ARM) else go(TITLE) end
+    end
+  end
+  return 0
+end
+
+local PAUSE_ITEMS = { "> RESUME", "> RESPAWN", "> QUIT" }
+
+local function draw()
+  lcd.clear()
+  if state == WARN then menus.warn(modelName)
+  elseif state == TITLE then menus.title()
+  elseif state == SETTINGS then menus.settings()
+  else
+    render.draw(thr)
+    if state == ARM then render.box("THROTTLE LOW", "TO ARM")
+    elseif state == CRASH then render.box("CRASHED", "ENT: RESPAWN")
+    elseif state == PAUSE then render.box("PAUSED", PAUSE_ITEMS[psel]) end
+  end
+end
+
+local function init()
+  config.load()
+  saveOk = config.save()
+  if model and model.getInfo then
+    local ok, info = pcall(model.getInfo)
+    if ok and info and info.name and info.name ~= "" then modelName = string.upper(string.sub(info.name, 1, 11)) end
+  end
+  menuMode()
+  last = getTime()
+  ignoreUntil = last + 40
+end
+
+local function run(event)
+  local now = getTime()
+  acc = acc + now - last
+  last = now
+  if acc > 20 then acc = 20 end
+  local steps = math.floor(acc / 5)
+  acc = acc - steps * 5
+  event = event or 0
+  if eatEnter and isEnter(event) then
+    eatEnter = false
+    event = 0
+  end
+  if now < ignoreUntil then event = 0 end
+  readSticks()
+  local r = update(event, steps)
+  if state >= ARM then lcd.resetBacklightTimeout() end
+  draw()
+  return r
+end
+
+-- use/state/loaded are for the test harness; EdgeTX only looks at init and run
+return { init = init, run = run, use = use, state = function() return state end,
+  loaded = function(n) return loaded[n] ~= nil end }

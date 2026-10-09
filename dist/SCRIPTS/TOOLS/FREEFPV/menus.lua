@@ -1,0 +1,109 @@
+-- Menu group (never loaded while flying): RF warning, title, settings.
+local use = ...
+local config = use("config")
+
+local M = {}
+
+M.saveOk = true
+M.sel, M.editing = 1, false
+
+local function center(y, s, flags)
+  lcd.drawText(64, y, s, (flags or 0) + CENTER)
+end
+
+-- text in reverse video: draw it centered, then XOR a box around it
+local function boxed(y, s)
+  center(y + 2, s)
+  local right = lcd.getLastRightPos()
+  local w = 2 * (right - 64) - 1 -- text width (CENTER puts ceil(w/2) right of x=64)
+  lcd.drawFilledRectangle(right - w - 2, y, w + 3, 11)
+end
+
+local function rule() lcd.drawLine(8, 18, 119, 18, DOTTED, FORCE) end
+
+function M.warn(modelName)
+  center(2, "RF WARNING", DBLSIZE)
+  rule()
+  center(22, "RADIO KEEPS SENDING")
+  center(31, "STICKS TO " .. (modelName or "YOUR MODEL"))
+  center(40, "DISARM / POWER OFF")
+  boxed(51, "[ENT] I KNOW")
+end
+
+-- text shown in the settings list
+function M.label(it)
+  local v = config.v[it.key]
+  if it.key == "QUAD" then return config.QUADS[v].name end
+  if it.key == "CAMERA" then return v .. " DEG" end
+  if it.key == "RP_EXPO" or it.key == "Y_EXPO" then return math.floor(v / 100) .. "." .. (v < 10 and "0" or "") .. v % 100 end
+  if it.names then return it.names[v - it.lo + 1] end
+  return tostring(v)
+end
+
+-- step the value of item it by dir (+1/-1), clamped; a new quad brings its usual camera angle
+function M.change(it, dir)
+  local v = config.v
+  local nv = v[it.key] + dir * (it.step or 1)
+  if nv < it.lo then nv = it.lo elseif nv > it.hi then nv = it.hi end
+  v[it.key] = nv
+  if it.key == "QUAD" then v.CAMERA = config.QUADS[nv].cam end
+end
+
+function M.title()
+  local v = config.v
+  center(3, "FREEFPV", DBLSIZE)
+  center(21, M.saveOk and config.MAPS[v.MAP] .. "  " .. config.QUADS[v.QUAD].name .. "  " .. (v.MODE == 2 and "ANGLE" or "ACRO")
+    or "NO SAVE")
+  -- a little horizon with a quad crosshair
+  lcd.drawLine(30, 38, 98, 34, SOLID, FORCE)
+  lcd.drawLine(61, 33, 67, 33, SOLID, FORCE)
+  lcd.drawLine(64, 30, 64, 36, SOLID, FORCE)
+  center(46, "ENT:FLY  RTN:EXIT")
+  center(56, "HOLD ENT: SETTINGS")
+end
+
+M.MENU = {} -- config items + EXIT
+for i = 1, #config.ITEMS do M.MENU[i] = config.ITEMS[i] end
+M.MENU[#M.MENU + 1] = { name = "EXIT", action = "exit" }
+local PAGES = math.ceil(#M.MENU / 5)
+
+function M.settings()
+  local sel = M.sel
+  local page = math.ceil(sel / 5)
+  lcd.drawText(2, 1, "SETTINGS", 0)
+  lcd.drawText(90, 1, page .. "/" .. PAGES, 0)
+  lcd.drawLine(0, 9, 127, 9, SOLID, FORCE)
+  for row = 1, 5 do
+    local i = (page - 1) * 5 + row
+    local it, y = M.MENU[i], 2 + row * 10
+    if not it then break end
+    local val = it.key and M.label(it) or ""
+    if i == sel and M.editing then val = "<" .. val .. ">" end
+    lcd.drawText(4, y, it.name, 0)
+    lcd.drawText(74, y, val, 0)
+    if i == sel then lcd.drawFilledRectangle(0, y - 1, 124, 9) end
+  end
+  lcd.drawLine(126, 11, 126, 62, SOLID, FORCE)
+  local h = math.floor(52 / PAGES)
+  lcd.drawFilledRectangle(125, 11 + (page - 1) * h, 3, h, FORCE)
+end
+
+-- one settings event: "next" / "prev" / "enter" / "exit"; returns true when leaving the menu
+function M.settingsEvent(e)
+  local it = M.MENU[M.sel]
+  if M.editing then
+    if e == "next" then M.change(it, 1)
+    elseif e == "prev" then M.change(it, -1)
+    elseif e == "enter" or e == "exit" then M.editing = false end
+    return false
+  end
+  if e == "next" then M.sel = M.sel % #M.MENU + 1
+  elseif e == "prev" then M.sel = (M.sel - 2) % #M.MENU + 1
+  elseif e == "exit" then return true
+  elseif e == "enter" then
+    if it.key then M.editing = true else return true end
+  end
+  return false
+end
+
+return M
