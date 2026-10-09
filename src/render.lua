@@ -8,6 +8,7 @@ local flight = use("flight")
 local M = {}
 
 local floor, sin, cos = math.floor, math.sin, math.cos
+local drawLine = lcd.drawLine -- looked up once: it is called hundreds of times per frame
 M.F = 40 -- focal length in px: ~116 deg horizontal field of view
 M.NEAR = 0.05 -- near plane (m)
 M.FAR = 120 -- objects farther than this are skipped (m)
@@ -18,7 +19,7 @@ local CX, CY, F, NEAR = 64, 32, M.F, M.NEAR
 
 -- camera: position and basis (right, up, forward) in world coordinates
 local px, py, pz, rx, ry, rz, ux, uy, uz, fx, fy, fz = 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0
-local lines = 0
+local lines, rows = 0, 0
 
 function M.camera()
   local t = flight.cam
@@ -56,7 +57,7 @@ local function seg2(x1, y1, x2, y2, pat)
   local dx, dy = x2 - x1, y2 - y1
   t0, t1 = 0, 1
   if edge(-dx, x1) and edge(dx, 127 - x1) and edge(-dy, y1) and edge(dy, 63 - y1) then
-    lcd.drawLine(floor(x1 + t0 * dx + 0.5), floor(y1 + t0 * dy + 0.5),
+    drawLine(floor(x1 + t0 * dx + 0.5), floor(y1 + t0 * dy + 0.5),
       floor(x1 + t1 * dx + 0.5), floor(y1 + t1 * dy + 0.5), pat, FORCE)
     lines = lines + 1
   end
@@ -116,111 +117,13 @@ local function visible(x, y, z, r)
   return (x < 0 and -x or x) - r < zz * CX / F and (y < 0 and -y or y) - r < zz * CY / F
 end
 
+-- solid boxes live in their own file (keeps each file small enough to compile on the radio)
+local box = use("solid")(tr, seg2, seg3, NEAR, CX, CY, F, drawLine)
+
 local VX, VY, VZ = {}, {}, {}
 for i = 1, 8 do VX[i], VY[i], VZ[i] = 0, 0, 0 end
 -- box corners 1..4 bottom (x1y1, x2y1, x2y2, x1y2), 5..8 top; 12 edges
 local EDGES = { 1, 2, 2, 3, 3, 4, 4, 1, 5, 6, 6, 7, 7, 8, 8, 5, 1, 5, 2, 6, 3, 7, 4, 8 }
-
--- faces by corner index: x1 side, x2 side, y1 side, y2 side, top (the bottom is never seen)
-local FACES = { 1, 4, 8, 5, 2, 3, 7, 6, 1, 2, 6, 5, 4, 3, 7, 8, 5, 6, 7, 8 }
-local QX, QY, QZ, PX, PY = {}, {}, {}, {}, {}
-local RL, RR = {}, {} -- per screen row: left/right end of the current box's outline
-for y = 0, 63 do RL[y], RR[y] = 1e9, -1e9 end
-local rows, ylo, yhi = 0, 64, -1
-
--- add face f of the current box (VX/VY/VZ) to the row spans: near-plane clip, project, scan edges
-local function fill(f)
-  local n, o = 0, (f - 1) * 4
-  for k = 1, 4 do
-    local a, b = FACES[o + k], FACES[o + k % 4 + 1]
-    local za, zb = VZ[a], VZ[b]
-    if za >= NEAR then
-      n = n + 1
-      QX[n], QY[n], QZ[n] = VX[a], VY[a], za
-    end
-    if (za >= NEAR) ~= (zb >= NEAR) then
-      local t = (NEAR - za) / (zb - za)
-      n = n + 1
-      QX[n], QY[n], QZ[n] = VX[a] + (VX[b] - VX[a]) * t, VY[a] + (VY[b] - VY[a]) * t, NEAR
-    end
-  end
-  if n < 3 then return end
-  local ymin, ymax = 1e9, -1e9
-  for i = 1, n do
-    local y = CY - F * QY[i] / QZ[i]
-    PX[i], PY[i] = CX + F * QX[i] / QZ[i], y
-    if y < ymin then ymin = y end
-    if y > ymax then ymax = y end
-  end
-  local y0, y1 = math.ceil(ymin), floor(ymax)
-  if y0 < 0 then y0 = 0 end
-  if y1 > 63 then y1 = 63 end
-  if y0 < ylo then ylo = y0 end
-  if y1 > yhi then yhi = y1 end
-  for y = y0, y1 do
-    local xl, xr = 1e9, -1e9
-    for i = 1, n do
-      local j = i % n + 1
-      local ya, yb = PY[i], PY[j]
-      if (ya <= y and yb >= y) or (yb <= y and ya >= y) then
-        local xa, xb = PX[i], PX[j]
-        if ya ~= yb then xa = xa + (y - ya) * (xb - xa) / (yb - ya); xb = xa end
-        if xa < xl then xl = xa end
-        if xb < xl then xl = xb end
-        if xa > xr then xr = xa end
-        if xb > xr then xr = xb end
-      end
-    end
-    if xl < RL[y] then RL[y] = xl end
-    if xr > RR[y] then RR[y] = xr end
-  end
-end
-
--- erase the box outline (the union of its visible faces is convex: one span per row)
-local function flush()
-  for y = ylo, yhi do
-    local xl, xr = RL[y], RR[y]
-    if xl <= 127 and xr >= 0 and xl <= xr then
-      if xl < 0 then xl = 0 end
-      if xr > 127 then xr = 127 end
-      lcd.drawLine(floor(xl + 0.5), y, floor(xr + 0.5), y, SOLID, ERASE)
-      rows = rows + 1
-    end
-    RL[y], RR[y] = 1e9, -1e9
-  end
-  ylo, yhi = 64, -1
-end
-
--- a solid box: hide what is behind its visible faces, then draw only their edges
-local function box(i, pat)
-  local W = flight.W
-  local x1, y1, z1, x2, y2, z2 = W.x1[i], W.y1[i], W.z1[i], W.x2[i], W.y2[i], W.z2[i]
-  VX[1], VY[1], VZ[1] = tr(x1, y1, z1)
-  VX[2], VY[2], VZ[2] = tr(x2, y1, z1)
-  VX[3], VY[3], VZ[3] = tr(x2, y2, z1)
-  VX[4], VY[4], VZ[4] = tr(x1, y2, z1)
-  VX[5], VY[5], VZ[5] = tr(x1, y1, z2)
-  VX[6], VY[6], VZ[6] = tr(x2, y1, z2)
-  VX[7], VY[7], VZ[7] = tr(x2, y2, z2)
-  VX[8], VY[8], VZ[8] = tr(x1, y2, z2)
-  -- a face is seen when the camera is on its outer side
-  local s1, s2, s3, s4, s5 = px < x1, px > x2, py < y1, py > y2, pz > z2
-  if s1 then fill(1) end
-  if s2 then fill(2) end
-  if s3 then fill(3) end
-  if s4 then fill(4) end
-  if s5 then fill(5) end
-  flush()
-  for f = 1, 5 do
-    if (f == 1 and s1) or (f == 2 and s2) or (f == 3 and s3) or (f == 4 and s4) or (f == 5 and s5) then
-      local o = (f - 1) * 4
-      for k = 1, 4 do
-        local a, b = FACES[o + k], FACES[o + k % 4 + 1]
-        seg3(VX[a], VY[a], VZ[a], VX[b], VY[b], VZ[b], pat)
-      end
-    end
-  end
-end
 
 -- gates: square opening + two legs to the ground (see-through, no fill)
 local function gate(i, pat)
@@ -284,7 +187,7 @@ local function objects()
     if i < 0 then gate(-i, pat)
     elseif K[i] == 2 then
       line((X1[i] + X2[i]) / 2, (Y1[i] + Y2[i]) / 2, Z1[i], (X1[i] + X2[i]) / 2, (Y1[i] + Y2[i]) / 2, Z2[i], pat) -- pole
-    else box(i, pat) end
+    else rows = rows + box(i, pat, px, py, pz) end
   end
 end
 
@@ -300,9 +203,14 @@ local function hud(thr)
   lcd.drawNumber(127, 57, floor(flight.speed() * flight.scale * 3.6 + 0.5), SMLSIZE + RIGHT) -- as seen, km/h
 end
 
+-- DEBUG: live frames per second (set by main) and Lua memory in KB.
+-- (getUsage() on B&W radios is the slowest frame since the script started, not the current one.)
+M.fps = 20
 local function debug()
-  lcd.drawNumber(1, 57, getUsage(), SMLSIZE)
-  lcd.drawNumber(20, 57, floor(collectgarbage("count")), SMLSIZE)
+  lcd.drawNumber(1, 57, floor(M.fps + 0.5), SMLSIZE)
+  lcd.drawText(lcd.getLastRightPos() + 1, 57, "FPS", SMLSIZE)
+  lcd.drawNumber(34, 57, floor(collectgarbage("count")), SMLSIZE)
+  lcd.drawText(lcd.getLastRightPos() + 1, 57, "KB", SMLSIZE)
 end
 
 -- the whole view; returns the number of lcd calls of the 3D part (lines + fill rows)

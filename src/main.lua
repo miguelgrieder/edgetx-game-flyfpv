@@ -29,11 +29,12 @@ local saveOk, modelName = true, nil
 local count = 0 -- ticks spent in ARM (throttle low) / CRASH
 local psel = 1 -- pause menu: 1 resume, 2 respawn, 3 quit
 local ail, ele, thr, rud = 0, 0, -1024, 0
+local frameTicks = 5 -- smoothed time between frames (10 ms units), for the DEBUG frame rate
 
 -- switch the loaded group, freeing the other one first
 local function menuMode()
   if flight then
-    loaded.flight, loaded.render, flight, render = nil, nil, nil, nil
+    loaded.flight, loaded.render, loaded.solid, flight, render = nil, nil, nil, nil, nil
     collectgarbage()
   end
   if not menus then
@@ -146,6 +147,7 @@ local function draw()
   elseif state == TITLE then menus.title()
   elseif state == SETTINGS then menus.settings()
   else
+    render.fps = frameTicks > 0 and 100 / frameTicks or 0
     render.draw(thr)
     if state == ARM then render.box("THROTTLE LOW", "TO ARM")
     elseif state == CRASH then render.box("CRASHED", "ENT: RESPAWN")
@@ -167,6 +169,7 @@ end
 
 local function run(event)
   local now = getTime()
+  frameTicks = frameTicks * 0.9 + (now - last) * 0.1
   acc = acc + now - last
   last = now
   if acc > 20 then acc = 20 end

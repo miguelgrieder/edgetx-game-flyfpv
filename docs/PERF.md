@@ -1,5 +1,9 @@
 # Performance and memory
 
+> **Update (faster solid boxes):** PC render time for a heavy CITY view 174 -> 90 us (physics with 8 substeps:
+> 11 us). Compile allocations: render 52 KB, solid 24 KB, flight 47 KB. Flying heap 99 KB (PC). DEBUG shows a
+> live frame rate now.
+
 > **Update (SIM SPEED 2x + solid buildings):** render.lua compiles with 64.5 KB of allocations (GateRush's 69 KB
 > pieces compile on a GX12), flying heap 90.5 KB, worst CITY view 290 lcd calls (edges + erase rows), soak max
 > 315 per frame. Physics does 8 substeps per frame at 2.0x but only against nearby boxes.

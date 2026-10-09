@@ -35,3 +35,9 @@ One line each: what — why — discarded alternative.
 - Solid buildings: painter's algorithm (objects sorted far to near by insertion sort — no table library), each box's visible faces (camera on the outer side of the face plane) are near-clipped, projected and merged into one span per screen row (a box's outline is convex), erased with horizontal lines, then only the visible faces' edges are drawn — a z-buffer (no pixel access) / per-face fills (2–3x the rows: CITY worst 425 calls vs 290).
 - 3D budget raised to 400 lcd calls (most are horizontal erase lines, the cheapest primitive); measured worst: CITY 290, soak max 315 per frame including the HUD.
 - Known painter limits: very large boxes next to small ones can sort wrong at some angles (sorted by centre distance); gates stay see-through on purpose.
+
+## Second real-radio round: CITY frame rate, DEBUG numbers
+
+- DEBUG showed a fixed CPU number because on B&W radios `getUsage()` is the slowest frame since the script started (`100 * maxLuaDuration / LUA_TASK_PERIOD_TICKS` in api_general.cpp), not the current one; the 180-320 % seen was most likely the load/compile of the flight files. DEBUG now shows a live, smoothed frame rate from `getTime()` between frames, plus the Lua memory (which stays flat while flying because nothing is allocated per frame).
+- Faster solid boxes (PC render time in a heavy CITY view: 174 -> 90 us, same pixels): edges are walked once over the rows they cross instead of testing every edge on every row; when the whole box is in front of the camera each corner is projected once and only the outline (edges between a seen and an unseen face, at most 6) is rasterised; each edge is drawn once; `lcd.drawLine` is cached in a local. The radio has no double-precision FPU, so arithmetic is what costs.
+- `solid.lua` split out of `render.lua`: render had reached 69.9 KB of compile allocations, at the largest size known to compile on a GX12; now render 52 KB, solid 24 KB.
