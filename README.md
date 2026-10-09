@@ -49,7 +49,10 @@ Sticks are read by function (`ail`, `ele`, `thr`, `rud`), so your radio's own st
   (`rate = x·center + (max − center)·|x|·(x⁵·expo + x·(1 − expo))`); centred sticks keep the current angle.
 - **ANGLE:** self-levelling; the roll/pitch sticks set a tilt up to 55°. Yaw is still a rate.
 - Thrust along the quad's up axis, gravity, drag (linear + quadratic → a top speed), air-mode style (rates work
-  at zero throttle). Physics runs 4 × per 50 ms frame.
+  at zero throttle).
+- **SIM SPEED** (default **2.0×**) runs all movement — gravity, thrust, drag, speed — faster than real time, so
+  falls and dives feel like a real quad. Rotation stays real time: your rates mean exactly what they say.
+  Physics runs 4 × SIM SPEED steps per 50 ms frame (collisions stay exact at any speed).
 - **Ground:** a soft touchdown lands (settles level). With **CRASH ON**, hitting the ground hard (fast, steep or
   tilted) or touching an obstacle is a crash → respawn. A **whoop bounces** off obstacles instead (ducts).
   With **CRASH OFF** you slide along obstacles and never crash.
@@ -76,8 +79,9 @@ Sticks are read by function (`ail`, `ele`, `thr`, `rud`), so your radio's own st
 
 ## Screen
 
-Horizon (solid line, rolls with you), dotted ground grid around you, obstacles in wireframe (solid when near,
-dotted far). HUD: crosshair, throttle bar (left), ACRO/ANGLE, altitude in m (top right), speed in km/h (bottom
+Horizon (solid line, rolls with you), dotted ground grid around you, obstacles drawn **solid**: everything is
+drawn far to near and each box hides what is behind it (grid, horizon, other buildings); only the faces you can
+see get their edges drawn. Near objects have solid edges, far ones dotted; gates stay see-through. HUD: crosshair, throttle bar (left), ACRO/ANGLE, altitude in m (top right), speed in km/h (bottom
 right). DEBUG adds the Lua CPU use (`getUsage()`, %) and the Lua memory in KB at the bottom left — read them on
 your radio and tell me if the CPU % gets high.
 
@@ -90,6 +94,7 @@ your radio and tell me if the CPU % gets high.
 | MODE | ACRO / ANGLE | ACRO |
 | CRASH | ON / OFF | ON |
 | CAMERA ANGLE | 0–60°, step 5 | 35° |
+| SIM SPEED | 1.0×–3.0×, step 0.5 (movement speed; rotation stays real time) | 2.0× |
 | R/P CENTER, R/P MAX, R/P EXPO | 10–400 °/s · 100–1800 °/s · 0.00–1.00 | 70 · 670 · 0.00 (Betaflight defaults) |
 | YAW CENTER, YAW MAX, YAW EXPO | same | 70 · 670 · 0.00 |
 | HUD | ON / OFF | ON |

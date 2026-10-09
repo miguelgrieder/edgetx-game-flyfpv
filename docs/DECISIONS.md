@@ -27,3 +27,11 @@ One line each: what — why — discarded alternative.
 - Maps are loaded with `use(name, true)`: the data is copied into the world arrays and the map file is not kept.
 - DEBUG shows `getUsage()` and `collectgarbage("count")` with `lcd.drawNumber` (no string building per frame); the test harness fixes the memory number so goldens stay deterministic.
 - Lap timer on GATES: not built (the player said not needed).
+
+## After the first real-radio test (user feedback)
+
+- "Everything 2x faster, especially falling": SIM SPEED (default 2.0x) scales simulated time for movement only (gravity, thrust, drag, position); rotation and rate lag stay real time so Betaflight rates keep their meaning — doubling gravity/top speeds per quad (would need retuning every quad) / a global time scale (would double the rates too).
+- Movement substeps stay 12.5 ms of simulated time (collision-safe), so there are 4 x SIM SPEED substeps per frame; a per-frame broad phase keeps only the boxes within reach so the extra substeps don't multiply collision work.
+- Solid buildings: painter's algorithm (objects sorted far to near by insertion sort — no table library), each box's visible faces (camera on the outer side of the face plane) are near-clipped, projected and merged into one span per screen row (a box's outline is convex), erased with horizontal lines, then only the visible faces' edges are drawn — a z-buffer (no pixel access) / per-face fills (2–3x the rows: CITY worst 425 calls vs 290).
+- 3D budget raised to 400 lcd calls (most are horizontal erase lines, the cheapest primitive); measured worst: CITY 290, soak max 315 per frame including the HUD.
+- Known painter limits: very large boxes next to small ones can sort wrong at some angles (sorted by centre distance); gates stay see-through on purpose.

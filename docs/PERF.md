@@ -1,5 +1,9 @@
 # Performance and memory
 
+> **Update (SIM SPEED 2x + solid buildings):** render.lua compiles with 64.5 KB of allocations (GateRush's 69 KB
+> pieces compile on a GX12), flying heap 90.5 KB, worst CITY view 290 lcd calls (edges + erase rows), soak max
+> 315 per frame. Physics does 8 substeps per frame at 2.0x but only against nearby boxes.
+
 PC measurements (Lua 5.2 64-bit with debug info; the radio stores compiled files without debug info and uses
 32-bit pointers, so its numbers are lower, but the comparisons hold). `lua5.2 tools/memory.lua`:
 
