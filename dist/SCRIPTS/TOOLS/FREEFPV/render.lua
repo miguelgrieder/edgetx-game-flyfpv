@@ -99,9 +99,13 @@ local function grid()
   local S, N = flight.grid, M.GRID_N
   local gx, gy = floor(px / S + 0.5) * S, floor(py / S + 0.5) * S
   local L = N * S
+  -- low down, far lines squeeze into a band at the horizon: keep lines within ~15x the height
+  local far = pz * 15
+  if far < 2 * S then far = 2 * S end
   for k = -N, N do
-    line(gx + k * S, gy - L, 0, gx + k * S, gy + L, 0, DOTTED)
-    line(gx - L, gy + k * S, 0, gx + L, gy + k * S, 0, DOTTED)
+    local x, y = gx + k * S, gy + k * S
+    if (x - px) * (x - px) < far * far then line(x, gy - L, 0, x, gy + L, 0, DOTTED) end
+    if (y - py) * (y - py) < far * far then line(gx - L, y, 0, gx + L, y, 0, DOTTED) end
   end
 end
 
