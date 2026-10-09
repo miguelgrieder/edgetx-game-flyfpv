@@ -18,7 +18,7 @@ rolls, inverted flight, all of it. A small wireframe world with fixed obstacles;
    SD card
    └── SCRIPTS/TOOLS/
        ├── freefpv.lua        <- the launcher shown in TOOLS
-       └── FREEFPV/           <- the game (config, menus, flight, render, 4 maps) + your settings
+       └── FREEFPV/           <- the game (config, menus, flight, render, solid, 4 maps) + your settings
    ```
 2. On the radio: **SYS** → **TOOLS** → **FreeFPV**.
 
