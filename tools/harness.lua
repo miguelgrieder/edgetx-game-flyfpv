@@ -24,13 +24,21 @@ function H.new(opts)
   local saved = {}
   -- EdgeTX does not set the string metatable: ("x"):sub() fails on the radio
   local smeta = getmetatable("")
+  -- the game's collectgarbage("count") (DEBUG readout) is fixed so goldens stay deterministic
+  local realGC = collectgarbage
+  local function fakeGC(opt, ...)
+    if opt == "count" then return 42 end
+    return realGC(opt, ...)
+  end
   local function radio(f, ...)
+    rawset(_G, "collectgarbage", fakeGC)
     for _, k in ipairs(HIDDEN) do saved[k] = rawget(_G, k); rawset(_G, k, nil) end
     local sidx = smeta.__index
     smeta.__index = nil
     local ok, r = pcall(f, ...)
     smeta.__index = sidx
     for _, k in ipairs(HIDDEN) do rawset(_G, k, saved[k]) end
+    rawset(_G, "collectgarbage", realGC)
     if not ok then error(r, 0) end
     return r
   end
