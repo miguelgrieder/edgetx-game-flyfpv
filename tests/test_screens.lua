@@ -29,7 +29,7 @@ T.H.mock.mkdirp("out/screens")
 for _, name in ipairs(SCREENS) do
   T.test(name .. " matches its golden (src and dist)", function()
     local fb, calls = render(name, "src")
-    T.ok(calls <= 300, "draw calls " .. calls)
+    T.ok(calls <= 420, "lcd calls " .. calls)
     save("out/screens/" .. name .. ".pbm", fb:pbm())
     local golden = "tests/golden/" .. name .. ".pbm"
     local want = T.read(golden)

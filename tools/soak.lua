@@ -1,6 +1,6 @@
 -- lua5.2 tools/soak.lua [frames per combo]
 -- Random sticks (smoothed, like a clumsy pilot) on every map x quad x crash setting, through the real
--- state machine: no runtime error, <= 300 draw calls, no drawing off-screen (the mock errors), flat memory.
+-- state machine: no runtime error, <= 420 lcd calls (3D budget 400 + HUD), no drawing off-screen (the mock errors), flat memory.
 local H = dofile("tools/harness.lua")
 local frames = tonumber(arg[1]) or 600
 local out = io.stdout
@@ -35,4 +35,4 @@ collectgarbage("collect")
 local growth = collectgarbage("count") - mem0
 out:write(string.format("soak: %d frames, %d maps x 3 quads x crash on/off, max draw calls %d, crashes seen %d, memory %+.1f KB\n",
   total, 4, maxCalls, crashes, growth))
-if maxCalls > 300 or growth > 50 then out:write("FAIL\n") os.exit(1) end
+if maxCalls > 420 or growth > 50 then out:write("FAIL\n") os.exit(1) end

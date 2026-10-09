@@ -13,7 +13,7 @@ M.NEAR = 0.05 -- near plane (m)
 M.FAR = 120 -- objects farther than this are skipped (m)
 M.SOLID_D = 40 -- nearer than this: solid lines, farther: dotted
 M.GRID_N = 3 -- grid lines each side of the quad (farther lines pile up at the horizon)
-M.BUDGET = 250 -- max lines per frame
+M.BUDGET = 400 -- max lcd calls per frame for the 3D view (edges + fill rows)
 local CX, CY, F, NEAR = 64, 32, M.F, M.NEAR
 
 -- camera: position and basis (right, up, forward) in world coordinates
@@ -121,64 +121,170 @@ for i = 1, 8 do VX[i], VY[i], VZ[i] = 0, 0, 0 end
 -- box corners 1..4 bottom (x1y1, x2y1, x2y2, x1y2), 5..8 top; 12 edges
 local EDGES = { 1, 2, 2, 3, 3, 4, 4, 1, 5, 6, 6, 7, 7, 8, 8, 5, 1, 5, 2, 6, 3, 7, 4, 8 }
 
-local function boxes()
+-- faces by corner index: x1 side, x2 side, y1 side, y2 side, top (the bottom is never seen)
+local FACES = { 1, 4, 8, 5, 2, 3, 7, 6, 1, 2, 6, 5, 4, 3, 7, 8, 5, 6, 7, 8 }
+local QX, QY, QZ, PX, PY = {}, {}, {}, {}, {}
+local RL, RR = {}, {} -- per screen row: left/right end of the current box's outline
+for y = 0, 63 do RL[y], RR[y] = 1e9, -1e9 end
+local rows, ylo, yhi = 0, 64, -1
+
+-- add face f of the current box (VX/VY/VZ) to the row spans: near-plane clip, project, scan edges
+local function fill(f)
+  local n, o = 0, (f - 1) * 4
+  for k = 1, 4 do
+    local a, b = FACES[o + k], FACES[o + k % 4 + 1]
+    local za, zb = VZ[a], VZ[b]
+    if za >= NEAR then
+      n = n + 1
+      QX[n], QY[n], QZ[n] = VX[a], VY[a], za
+    end
+    if (za >= NEAR) ~= (zb >= NEAR) then
+      local t = (NEAR - za) / (zb - za)
+      n = n + 1
+      QX[n], QY[n], QZ[n] = VX[a] + (VX[b] - VX[a]) * t, VY[a] + (VY[b] - VY[a]) * t, NEAR
+    end
+  end
+  if n < 3 then return end
+  local ymin, ymax = 1e9, -1e9
+  for i = 1, n do
+    local y = CY - F * QY[i] / QZ[i]
+    PX[i], PY[i] = CX + F * QX[i] / QZ[i], y
+    if y < ymin then ymin = y end
+    if y > ymax then ymax = y end
+  end
+  local y0, y1 = math.ceil(ymin), floor(ymax)
+  if y0 < 0 then y0 = 0 end
+  if y1 > 63 then y1 = 63 end
+  if y0 < ylo then ylo = y0 end
+  if y1 > yhi then yhi = y1 end
+  for y = y0, y1 do
+    local xl, xr = 1e9, -1e9
+    for i = 1, n do
+      local j = i % n + 1
+      local ya, yb = PY[i], PY[j]
+      if (ya <= y and yb >= y) or (yb <= y and ya >= y) then
+        local xa, xb = PX[i], PX[j]
+        if ya ~= yb then xa = xa + (y - ya) * (xb - xa) / (yb - ya); xb = xa end
+        if xa < xl then xl = xa end
+        if xb < xl then xl = xb end
+        if xa > xr then xr = xa end
+        if xb > xr then xr = xb end
+      end
+    end
+    if xl < RL[y] then RL[y] = xl end
+    if xr > RR[y] then RR[y] = xr end
+  end
+end
+
+-- erase the box outline (the union of its visible faces is convex: one span per row)
+local function flush()
+  for y = ylo, yhi do
+    local xl, xr = RL[y], RR[y]
+    if xl <= 127 and xr >= 0 and xl <= xr then
+      if xl < 0 then xl = 0 end
+      if xr > 127 then xr = 127 end
+      lcd.drawLine(floor(xl + 0.5), y, floor(xr + 0.5), y, SOLID, ERASE)
+      rows = rows + 1
+    end
+    RL[y], RR[y] = 1e9, -1e9
+  end
+  ylo, yhi = 64, -1
+end
+
+-- a solid box: hide what is behind its visible faces, then draw only their edges
+local function box(i, pat)
   local W = flight.W
-  local X1, Y1, Z1, X2, Y2, Z2, K = W.x1, W.y1, W.z1, W.x2, W.y2, W.z2, W.kind
-  for i = 1, W.nb do
-    if lines >= M.BUDGET then return end
-    local k = K[i]
-    if k > 0 then
-      local x1, y1, z1, x2, y2, z2 = X1[i], Y1[i], Z1[i], X2[i], Y2[i], Z2[i]
-      local mx, my, mz = (x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2
-      local r = ((x2 - x1) + (y2 - y1) + (z2 - z1)) / 2 -- >= half diagonal
-      local cx, cy, cz = tr(mx, my, mz)
-      if visible(cx, cy, cz, r) then
-        local pat = cz > M.SOLID_D and DOTTED or SOLID
-        if k == 2 then
-          line(mx, my, z1, mx, my, z2, pat) -- pole
-        else
-          VX[1], VY[1], VZ[1] = tr(x1, y1, z1)
-          VX[2], VY[2], VZ[2] = tr(x2, y1, z1)
-          VX[3], VY[3], VZ[3] = tr(x2, y2, z1)
-          VX[4], VY[4], VZ[4] = tr(x1, y2, z1)
-          VX[5], VY[5], VZ[5] = tr(x1, y1, z2)
-          VX[6], VY[6], VZ[6] = tr(x2, y1, z2)
-          VX[7], VY[7], VZ[7] = tr(x2, y2, z2)
-          VX[8], VY[8], VZ[8] = tr(x1, y2, z2)
-          for e = 1, 24, 2 do
-            local a, b = EDGES[e], EDGES[e + 1]
-            seg3(VX[a], VY[a], VZ[a], VX[b], VY[b], VZ[b], pat)
-          end
-        end
+  local x1, y1, z1, x2, y2, z2 = W.x1[i], W.y1[i], W.z1[i], W.x2[i], W.y2[i], W.z2[i]
+  VX[1], VY[1], VZ[1] = tr(x1, y1, z1)
+  VX[2], VY[2], VZ[2] = tr(x2, y1, z1)
+  VX[3], VY[3], VZ[3] = tr(x2, y2, z1)
+  VX[4], VY[4], VZ[4] = tr(x1, y2, z1)
+  VX[5], VY[5], VZ[5] = tr(x1, y1, z2)
+  VX[6], VY[6], VZ[6] = tr(x2, y1, z2)
+  VX[7], VY[7], VZ[7] = tr(x2, y2, z2)
+  VX[8], VY[8], VZ[8] = tr(x1, y2, z2)
+  -- a face is seen when the camera is on its outer side
+  local s1, s2, s3, s4, s5 = px < x1, px > x2, py < y1, py > y2, pz > z2
+  if s1 then fill(1) end
+  if s2 then fill(2) end
+  if s3 then fill(3) end
+  if s4 then fill(4) end
+  if s5 then fill(5) end
+  flush()
+  for f = 1, 5 do
+    if (f == 1 and s1) or (f == 2 and s2) or (f == 3 and s3) or (f == 4 and s4) or (f == 5 and s5) then
+      local o = (f - 1) * 4
+      for k = 1, 4 do
+        local a, b = FACES[o + k], FACES[o + k % 4 + 1]
+        seg3(VX[a], VY[a], VZ[a], VX[b], VY[b], VZ[b], pat)
       end
     end
   end
 end
 
--- gates: square opening + two legs to the ground
-local function gates()
+-- gates: square opening + two legs to the ground (see-through, no fill)
+local function gate(i, pat)
   local W = flight.W
   local hw, z1, z2 = flight.GATE_W, flight.GATE_Z1, flight.GATE_Z2
-  for i = 1, W.ng do
-    if lines >= M.BUDGET then return end
-    local x, y = W.gx[i], W.gy[i]
-    local cx, cy, cz = tr(x, y, (z1 + z2) / 2)
-    if visible(cx, cy, cz, 2) then
-      local ax, ay = W.ga[i] == 0 and hw or 0, W.ga[i] == 0 and 0 or hw
-      local pat = cz > M.SOLID_D and DOTTED or SOLID
-      VX[1], VY[1], VZ[1] = tr(x - ax, y - ay, z1)
-      VX[2], VY[2], VZ[2] = tr(x + ax, y + ay, z1)
-      VX[3], VY[3], VZ[3] = tr(x + ax, y + ay, z2)
-      VX[4], VY[4], VZ[4] = tr(x - ax, y - ay, z2)
-      VX[5], VY[5], VZ[5] = tr(x - ax, y - ay, 0)
-      VX[6], VY[6], VZ[6] = tr(x + ax, y + ay, 0)
-      for e = 1, 8, 2 do
-        local a, b = EDGES[e], EDGES[e + 1]
-        seg3(VX[a], VY[a], VZ[a], VX[b], VY[b], VZ[b], pat)
+  local x, y = W.gx[i], W.gy[i]
+  local ax, ay = W.ga[i] == 0 and hw or 0, W.ga[i] == 0 and 0 or hw
+  VX[1], VY[1], VZ[1] = tr(x - ax, y - ay, z1)
+  VX[2], VY[2], VZ[2] = tr(x + ax, y + ay, z1)
+  VX[3], VY[3], VZ[3] = tr(x + ax, y + ay, z2)
+  VX[4], VY[4], VZ[4] = tr(x - ax, y - ay, z2)
+  VX[5], VY[5], VZ[5] = tr(x - ax, y - ay, 0)
+  VX[6], VY[6], VZ[6] = tr(x + ax, y + ay, 0)
+  for e = 1, 8, 2 do
+    local a, b = EDGES[e], EDGES[e + 1]
+    seg3(VX[a], VY[a], VZ[a], VX[b], VY[b], VZ[b], pat)
+  end
+  seg3(VX[1], VY[1], VZ[1], VX[5], VY[5], VZ[5], pat)
+  seg3(VX[2], VY[2], VZ[2], VX[6], VY[6], VZ[6], pat)
+end
+
+-- everything in view, sorted far to near (painter's algorithm: near boxes hide what is behind)
+local ORD, DST = {}, {}
+local function objects()
+  local W = flight.W
+  local X1, Y1, Z1, X2, Y2, Z2, K = W.x1, W.y1, W.z1, W.x2, W.y2, W.z2, W.kind
+  local n = 0
+  for i = 1, W.nb do
+    if K[i] > 0 then
+      local mx, my, mz = (X1[i] + X2[i]) / 2, (Y1[i] + Y2[i]) / 2, (Z1[i] + Z2[i]) / 2
+      local cx, cy, cz = tr(mx, my, mz)
+      if visible(cx, cy, cz, ((X2[i] - X1[i]) + (Y2[i] - Y1[i]) + (Z2[i] - Z1[i])) / 2) then
+        n = n + 1
+        ORD[n], DST[n] = i, cx * cx + cy * cy + cz * cz
       end
-      seg3(VX[1], VY[1], VZ[1], VX[5], VY[5], VZ[5], pat)
-      seg3(VX[2], VY[2], VZ[2], VX[6], VY[6], VZ[6], pat)
     end
+  end
+  local zm = (flight.GATE_Z1 + flight.GATE_Z2) / 2
+  for i = 1, W.ng do
+    local cx, cy, cz = tr(W.gx[i], W.gy[i], zm)
+    if visible(cx, cy, cz, 2) then
+      n = n + 1
+      ORD[n], DST[n] = -i, cx * cx + cy * cy + cz * cz
+    end
+  end
+  -- insertion sort, farthest first (no table library on the radio)
+  for i = 2, n do
+    local o, d = ORD[i], DST[i]
+    local j = i - 1
+    while j >= 1 and DST[j] < d do
+      ORD[j + 1], DST[j + 1] = ORD[j], DST[j]
+      j = j - 1
+    end
+    ORD[j + 1], DST[j + 1] = o, d
+  end
+  local far2 = M.SOLID_D * M.SOLID_D
+  for k = 1, n do
+    if lines + rows >= M.BUDGET then return end
+    local i = ORD[k]
+    local pat = DST[k] > far2 and DOTTED or SOLID
+    if i < 0 then gate(-i, pat)
+    elseif K[i] == 2 then
+      line((X1[i] + X2[i]) / 2, (Y1[i] + Y2[i]) / 2, Z1[i], (X1[i] + X2[i]) / 2, (Y1[i] + Y2[i]) / 2, Z2[i], pat) -- pole
+    else box(i, pat) end
   end
 end
 
@@ -199,15 +305,14 @@ local function debug()
   lcd.drawNumber(20, 57, floor(collectgarbage("count")), SMLSIZE)
 end
 
--- the whole view; returns the number of lines drawn by the 3D part
+-- the whole view; returns the number of lcd calls of the 3D part (lines + fill rows)
 function M.draw(thr)
-  lines = 0
+  lines, rows = 0, 0
   M.camera()
   horizon()
   grid()
-  boxes()
-  gates()
-  local n = lines
+  objects()
+  local n = lines + rows
   if config.v.HUD == 1 then hud(thr) end
   if config.v.DEBUG == 1 then debug() end
   return n
