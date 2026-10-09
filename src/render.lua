@@ -12,7 +12,7 @@ M.F = 40 -- focal length in px: ~116 deg horizontal field of view
 M.NEAR = 0.05 -- near plane (m)
 M.FAR = 120 -- objects farther than this are skipped (m)
 M.SOLID_D = 40 -- nearer than this: solid lines, farther: dotted
-M.GRID_N = 5 -- grid lines each side of the quad
+M.GRID_N = 3 -- grid lines each side of the quad (farther lines pile up at the horizon)
 M.BUDGET = 250 -- max lines per frame
 local CX, CY, F, NEAR = 64, 32, M.F, M.NEAR
 
