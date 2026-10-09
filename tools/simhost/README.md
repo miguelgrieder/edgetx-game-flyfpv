@@ -4,18 +4,21 @@
 compiled for PC) with Python `ctypes`, boots it, launches a Lua tool from the TOOLS menu, injects
 sticks and keys, and dumps the 128x64 LCD as PBM files. Stdlib only, Windows x64 only.
 
-## Get the DLLs (once, nothing installed system-wide)
+## Get the DLLs
+With EdgeTX Companion 2.12 installed they are in `C:\Program Files\EdgeTX\Companion 2.12in` (the `make sim` default).
+
+Without installing (the original method):
 Companion for Windows (`edgetx-cpn-win64-vX.Y.Z.zip` on GitHub releases, tested with 2.12.4) contains an
 NSIS installer. Unpack it with 7-Zip (`7z x companion-windows-*.exe -oinst`) and use `inst/bin` as
 `--dll-dir` (needs `Qt6Core.dll`, `SDL2.dll` and the `libedgetx-*-simulator.dll` files; the MSVC runtime
 is already on Windows). Available B&W radios include tx12, tx12mk2, boxer, pocket, gx12, zorro, x7...
 
 ## Run
-    python tools/simhost/simu_host.py --dll-dir <inst/bin> --radio tx12 --sd dist --tool GateRush \
+    python tools/simhost/simu_host.py --dll-dir <inst/bin> --radio tx12 --sd dist --tool FreeFPV \
         --inputs inputs/run1.txt --out out/simu/run1
 
 * `--sd` is copied to `<out>/_sd` (missing RADIO/MODELS/SETTINGS dirs are created); your folder is never touched.
-* `--tool` is the display name from the script header `-- TNS|GateRush|TNE` (file in `SCRIPTS/TOOLS/`).
+* `--tool` is the display name from the script header `-- TNS|FreeFPV|TNE` (file in `SCRIPTS/TOOLS/`).
 * Without `--inputs`, records `--frames` frames (default 100, 50 ms each) with idle sticks.
 * Other options: `--frame-ms`, `--boot-ms` (3500), `--tail` (ms recorded after last input line, 500),
   `--nav "sys,next,enter"` (custom launch key sequence), `--no-launch`, `--stop-keys`.
