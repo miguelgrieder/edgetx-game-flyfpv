@@ -5,7 +5,7 @@ compiled for PC) with Python `ctypes`, boots it, launches a Lua tool from the TO
 sticks and keys, and dumps the 128x64 LCD as PBM files. Stdlib only, Windows x64 only.
 
 ## Get the DLLs
-With EdgeTX Companion 2.12 installed they are in `C:\Program Files\EdgeTX\Companion 2.12in` (the `make sim` default).
+With EdgeTX Companion 2.12 installed they are in `C:/Program Files/EdgeTX/Companion 2.12/bin` (the `make sim` default).
 
 Without installing (the original method):
 Companion for Windows (`edgetx-cpn-win64-vX.Y.Z.zip` on GitHub releases, tested with 2.12.4) contains an
