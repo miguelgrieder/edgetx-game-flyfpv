@@ -9,13 +9,17 @@ local M = {}
 local sqrt, sin, cos, abs, atan2, asin = math.sqrt, math.sin, math.cos, math.abs, math.atan2, math.asin
 local G = 9.81
 local RAD = math.pi / 180
-M.SUB = 4 -- physics substeps per 50 ms tick (12.5 ms: a 5" at top speed moves < 0.5 m, less than a gate bar + its size)
-M.DT = 0.05 / M.SUB
+-- SIM SPEED runs movement (gravity, thrust, drag, position) faster than real time; rotation stays real
+-- time so the rates mean what they say. Each substep is 12.5 ms of simulated movement (a 5" at top speed
+-- moves < 0.5 m: less than a gate bar + its size), so there are 4 x SIM SPEED substeps per 50 ms frame.
+M.DT = 0.0125 -- simulated seconds of movement per substep
+M.SUB, M.DTR, M.scale = 4, 0.0125, 1 -- substeps per frame, real seconds per substep (rotation), speed factor
 M.ANGLE_MAX = 55 -- angle mode: full stick tilt (deg)
 M.ANGLE_GAIN = 6 -- angle mode: deg/s of correction per deg of error
 
 -- world: collision boxes (kind 1 box, 2 pole, 0 hidden gate bar) and gates
 local W = { x1 = {}, y1 = {}, z1 = {}, x2 = {}, y2 = {}, z2 = {}, kind = {}, nb = 0, gx = {}, gy = {}, ga = {}, ng = 0 }
+local NEARB, nnear = {}, 0 -- boxes close enough to touch during this frame
 M.W = W
 
 -- Betaflight "actual" rates: stick -1..1 -> deg/s (center sensitivity, max rate, expo in hundredths)
@@ -76,7 +80,10 @@ function M.setup()
   local q = config.QUADS[v.QUAD]
   M.tw, M.lin, M.radius, M.bounce = q.tw, q.lin, q.radius, q.bounce
   M.kq = (q.tw * G - q.lin * q.vmax) / (q.vmax * q.vmax) -- quadratic drag: top speed at full throttle
-  M.lagK = M.DT / (q.lag + M.DT)
+  M.scale = v.SIM_SPEED / 10
+  M.SUB = math.floor(4 * M.scale + 0.5)
+  M.DTR = 0.05 / M.SUB
+  M.lagK = M.DTR / (q.lag + M.DTR)
   M.angle, M.crashOn = v.MODE == 2, v.CRASH == 1
   M.rpC, M.rpM, M.rpE, M.yC, M.yM, M.yE = v.RP_CENTER, v.RP_MAX, v.RP_EXPO, v.Y_CENTER, v.Y_MAX, v.Y_EXPO
   M.cam = v.CAMERA * RAD
@@ -133,7 +140,8 @@ end
 local function collide()
   local px, py, pz, r = M.px, M.py, M.pz, M.radius
   local X1, Y1, Z1, X2, Y2, Z2 = W.x1, W.y1, W.z1, W.x2, W.y2, W.z2
-  for i = 1, W.nb do
+  for k = 1, nnear do
+    local i = NEARB[k]
     if px + r > X1[i] and px - r < X2[i] and py + r > Y1[i] and py - r < Y2[i] and pz - r < Z2[i] then
       local cx = px < X1[i] and X1[i] or (px > X2[i] and X2[i] or px)
       local cy = py < Y1[i] and Y1[i] or (py > Y2[i] and Y2[i] or py)
@@ -171,7 +179,7 @@ end
 
 -- one physics substep; sticks -1..1, throttle 0..1
 function M.step(ail, ele, thr, rud)
-  local dt = M.DT
+  local dt, dtr = M.DT, M.DTR
   local T = thr * M.tw * G
   if M.ground then
     if T <= G * 1.02 then
@@ -202,7 +210,7 @@ function M.step(ail, ele, thr, rud)
   M.wr = M.wr + (cr * RAD - M.wr) * k
   M.wp = M.wp + (cp * RAD - M.wp) * k
   M.wy = M.wy + (cy * RAD - M.wy) * k
-  rotate(M.wr * dt, M.wp * dt, M.wy * dt)
+  rotate(M.wr * dtr, M.wp * dtr, M.wy * dtr)
   -- thrust along u, gravity, drag (linear + quadratic)
   local vx, vy, vz = M.vx, M.vy, M.vz
   local drag = M.kq * sqrt(vx * vx + vy * vy + vz * vz) + M.lin
@@ -237,6 +245,18 @@ function M.tick(ail, ele, thr, rud)
   local a, e, y = ail / 1024, ele / 1024, rud / 1024
   local t = (thr + 1024) / 2048
   if t < 0 then t = 0 elseif t > 1 then t = 1 end
+  -- broad phase: only boxes within this frame's reach are tested in the substeps
+  local reach = M.speed() * M.DT * M.SUB + M.radius + 1
+  local px, py, pz = M.px, M.py, M.pz
+  local X1, Y1, Z1, X2, Y2, Z2 = W.x1, W.y1, W.z1, W.x2, W.y2, W.z2
+  nnear = 0
+  for i = 1, W.nb do
+    if px + reach > X1[i] and px - reach < X2[i] and py + reach > Y1[i] and py - reach < Y2[i]
+      and pz - reach < Z2[i] and pz + reach > Z1[i] then
+      nnear = nnear + 1
+      NEARB[nnear] = i
+    end
+  end
   for _ = 1, M.SUB do
     M.step(a, e, t, y)
     if M.crashed then return end

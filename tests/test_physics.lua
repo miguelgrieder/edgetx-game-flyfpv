@@ -134,3 +134,19 @@ T.test("obstacles: crash ON crashes, whoop bounces, crash OFF slides", function(
     end
   end
 end)
+
+T.test("SIM SPEED 2.0x: movement in 1 s equals 2 s at 1.0x; rotation stays real time", function()
+  local f1 = setup({ SIM_SPEED = 10, CRASH = 0 })
+  local f2 = setup({ SIM_SPEED = 20, CRASH = 0 })
+  f1.pz, f1.ground = 100, false
+  f2.pz, f2.ground = 100, false
+  for _ = 1, 40 do f1.tick(0, 0, -1024, 0) end -- 2 s at 1x
+  for _ = 1, 20 do f2.tick(0, 0, -1024, 0) end -- 1 s at 2x
+  T.near(f1.pz, f2.pz, 1e-6)
+  T.ok(f2.pz < 90, "fell")
+  -- rotation: one full-stick roll second turns the same angle at any SIM SPEED
+  f2 = setup({ SIM_SPEED = 20 })
+  for _ = 1, 40 do f2.tick(0, 0, thrFor(0.4), 0) end
+  for _ = 1, 20 do f2.tick(1024, 0, thrFor(0.3), 0) end
+  T.near(f2.wr / math.pi * 180, 670, 5)
+end)

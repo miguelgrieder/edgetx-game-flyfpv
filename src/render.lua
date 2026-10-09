@@ -191,7 +191,7 @@ local function hud(thr)
   if t > 0 then lcd.drawFilledRectangle(1, 51 - t, 2, t, FORCE) end
   lcd.drawText(1, 1, flight.angle and "ANGLE" or "ACRO", SMLSIZE)
   lcd.drawNumber(127, 1, floor(flight.pz + 0.5), SMLSIZE + RIGHT)
-  lcd.drawNumber(127, 57, floor(flight.speed() * 3.6 + 0.5), SMLSIZE + RIGHT)
+  lcd.drawNumber(127, 57, floor(flight.speed() * flight.scale * 3.6 + 0.5), SMLSIZE + RIGHT) -- as seen, km/h
 end
 
 local function debug()

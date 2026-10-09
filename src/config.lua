@@ -23,6 +23,7 @@ M.ITEMS = {
   { key = "MODE", name = "MODE", lo = 1, hi = 2, def = 1, names = { "ACRO", "ANGLE" } },
   { key = "CRASH", name = "CRASH", lo = 0, hi = 1, def = 1, names = { "OFF", "ON" } },
   { key = "CAMERA", name = "CAMERA ANGLE", lo = 0, hi = 60, step = 5, def = 35 },
+  { key = "SIM_SPEED", name = "SIM SPEED", lo = 10, hi = 30, step = 5, def = 20 }, -- tenths: 2.0x
   { key = "RP_CENTER", name = "R/P CENTER", lo = 10, hi = 400, step = 10, def = 70 },
   { key = "RP_MAX", name = "R/P MAX", lo = 100, hi = 1800, step = 10, def = 670 },
   { key = "RP_EXPO", name = "R/P EXPO", lo = 0, hi = 100, step = 5, def = 0 },

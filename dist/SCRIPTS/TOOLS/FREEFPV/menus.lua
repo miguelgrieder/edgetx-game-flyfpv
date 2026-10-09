@@ -35,6 +35,7 @@ function M.label(it)
   local v = config.v[it.key]
   if it.key == "QUAD" then return config.QUADS[v].name end
   if it.key == "CAMERA" then return v .. " DEG" end
+  if it.key == "SIM_SPEED" then return math.floor(v / 10) .. "." .. v % 10 .. "X" end
   if it.key == "RP_EXPO" or it.key == "Y_EXPO" then return math.floor(v / 100) .. "." .. (v < 10 and "0" or "") .. v % 100 end
   if it.names then return it.names[v - it.lo + 1] end
   return tostring(v)
