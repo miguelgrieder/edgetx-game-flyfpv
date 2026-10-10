@@ -1,7 +1,6 @@
 local T = dofile("tests/t.lua")
 
-local MAPS = { "map_field", "map_gates", "map_poles", "map_city", "map_metro", "map_space", "map_oval", "map_tech",
-  "map_sky" }
+local MAPS = { "map_city", "map_metro", "map_space", "map_oval", "map_tech", "map_sky" }
 
 local function setup(mapfile, cfg)
   local h = T.H.new({ sd = "t_world" })
@@ -15,6 +14,18 @@ local function setup(mapfile, cfg)
 end
 
 local function thrFor(t) return t * 2048 - 1024 end
+
+-- a map table straight into the flight group (no file)
+local function setupMap(map, cfg)
+  local h = T.H.new({ sd = "t_world2" })
+  local c, f, r = h.config, h.flight, h.render
+  c.defaults()
+  for k, v in pairs(cfg or {}) do c.v[k] = v end
+  f.load(map)
+  f.setup()
+  f.spawn()
+  return h, f, r
+end
 
 T.test("every map loads, spawns clear of obstacles and takes off without hitting anything", function()
   for _, m in ipairs(MAPS) do
@@ -58,29 +69,18 @@ local function flyNorth(f)
 end
 
 T.test("flying through a gate is fine, into its post is a crash", function()
-  -- FIELD: gate at (0, 15) spanning x, opening 2 m wide, z 0.5..2.5
-  local _, f = setup("map_field", { MODE = 2, QUAD = 3 })
+  -- a gate at (0, 15) spanning x, opening 2 m wide, z 0.5..2.5
+  local GATE = { gate = { 0, 15, 0 } }
+  local _, f = setupMap(GATE, { MODE = 2, QUAD = 3 })
   flyNorth(f)
   T.eq(f.crashed, false)
   T.ok(f.py > 20, "passed the gate")
-  _, f = setup("map_field", { MODE = 2, QUAD = 3 })
+  _, f = setupMap(GATE, { MODE = 2, QUAD = 3 })
   f.sx = 1.05 -- lined up with the right post
   f.spawn()
   flyNorth(f)
   T.eq(f.crashed, true)
 end)
-
--- a map table straight into the flight group (no file)
-local function setupMap(map, cfg)
-  local h = T.H.new({ sd = "t_world2" })
-  local c, f, r = h.config, h.flight, h.render
-  c.defaults()
-  for k, v in pairs(cfg or {}) do c.v[k] = v end
-  f.load(map)
-  f.setup()
-  f.spawn()
-  return h, f, r
-end
 
 T.test("floating boxes and poles, tunnels, chimneys, roofs and stars build their collision boxes", function()
   local _, f = setupMap({ fbox = { 0, 10, 5, 4, 4, 2 }, fpole = { 3, 3, 2, 4 },

@@ -78,15 +78,12 @@ Sticks are read by function (`ail`, `ele`, `thr`, `rud`), so your radio's own st
 
 | MAP | what's there |
 |---|---|
-| FIELD | open field, a gate straight ahead, a few boxes and poles |
-| GATES | a 60 × 80 m loop of six gates |
-| POLES | a slalom line ahead, then a small pole forest |
 | CITY | eight blocks with 8 m streets and a square in the middle, a gate at the entrance |
 | METRO | a bigger city: 14 blocks 32 m apart; a plaza with a roof on four poles (a hole to fly up through, a chimney above it), a bridge over the main avenue, a subway tunnel, lamp posts, gates. Blocks past 36 m are not drawn |
 | SPACE | starry sky over a wide grid; floating blocks, a station, platforms, poles, tunnels, rings and a chimney at every height; a roof with a hole on tall poles |
-| OVAL | race: fast 50 × 150 m loop; gates, a tunnel on the west straight, a floating ring on the east one |
-| TECH | race: slalom, gates, under a low bridge, up through a chimney (enter from below), down through a roof's hole, back through a tunnel |
-| SKY | race in the air: rings climbing north, a high tunnel, a chimney to dive down (exit under it), a roof hole to fly up through, platforms |
+| T_OVAL | race: fast 50 × 150 m loop; gates, a tunnel on the west straight, a floating ring on the east one |
+| T_TECH | race: slalom, gates, under a low bridge, up through a chimney (enter from below), down through a roof's hole, back through a tunnel |
+| T_SKY | race in the air: rings climbing north, a high tunnel, a chimney to dive down (exit under it), a roof hole to fly up through, platforms |
 
 Tunnels, rings and chimneys are see-through wire (like gates); their walls still stop you. Every map's busiest view
 costs about the same as CITY's (a test checks it with `tools/mapcost.lua`).
@@ -104,7 +101,7 @@ bottom left.
 
 | setting | range | default |
 |---|---|---|
-| MAP | FIELD / GATES / POLES / CITY | FIELD |
+| MAP | CITY / METRO / SPACE / T_OVAL / T_TECH / T_SKY (T_ = race tracks) | CITY |
 | QUAD | WHOOP / 2.5IN / 3IN / 3.5IN / 5IN (also sets CAMERA ANGLE) | 5IN |
 | MODE | ACRO / ANGLE | ACRO |
 | CRASH | ON / OFF | ON |

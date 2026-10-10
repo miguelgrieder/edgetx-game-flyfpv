@@ -7,7 +7,7 @@ local H = dofile("tools/harness.lua")
 local maps = { ... }
 local cli = arg and arg[0] and arg[0]:find("mapcost") -- from the command line, or dofile'd by a test
 if #maps == 0 then
-  maps = { "map_field", "map_gates", "map_poles", "map_city", "map_metro", "map_space", "map_oval", "map_tech", "map_sky" }
+  maps = { "map_city", "map_metro", "map_space", "map_oval", "map_tech", "map_sky" }
 end
 
 local function scan(name)

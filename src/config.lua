@@ -4,9 +4,8 @@ local M = {}
 M.VERSION = "v2.1" -- shown on the title screen
 M.FILE = "/SCRIPTS/TOOLS/FREEFPV/freefpv.cfg"
 
-M.MAPS = { "FIELD", "GATES", "POLES", "CITY", "METRO", "SPACE", "OVAL", "TECH", "SKY" }
-M.MAPFILE = { "map_field", "map_gates", "map_poles", "map_city", "map_metro", "map_space", "map_oval", "map_tech",
-  "map_sky" }
+M.MAPS = { "CITY", "METRO", "SPACE", "T_OVAL", "T_TECH", "T_SKY" } -- T_: race tracks
+M.MAPFILE = { "map_city", "map_metro", "map_space", "map_oval", "map_tech", "map_sky" }
 
 -- quad types: thrust/weight, top speed (m/s), linear drag (1/s), rate response lag (s),
 -- collision radius (m), default camera angle (deg), bounces off obstacles (ducted)
