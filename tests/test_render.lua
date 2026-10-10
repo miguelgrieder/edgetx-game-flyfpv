@@ -21,32 +21,51 @@ T.test("projection: straight ahead is the screen centre, up is up, right is righ
   T.ok(x > 0 and y > 0, "right and up")
 end)
 
-T.test("uptilt puts the horizon low on the ground; rolling tilts it", function()
-  local h, f, r = setup({ CAMERA = 35 })
+-- topmost lit row of column x within rows y0..y1 (nil: none)
+local function lit(h, x, y0, y1)
+  local r
+  for y = y1, y0, -1 do if h.fb():get(x, y) == 1 then r = y end end -- int
+  return r
+end
+
+-- pose: quad pz m up, pitched pitch degrees nose down (yaw north, no roll)
+local function nose(f, pz, pitch)
+  local a = pitch * math.pi / 180
+  f.px, f.py, f.pz, f.ground = 0, 0, pz, false
+  f.fx, f.fy, f.fz, f.rx, f.ry, f.rz = 0, math.cos(a), -math.sin(a), 1, 0, 0
+  f.ux, f.uy, f.uz = 0, math.sin(a), math.cos(a)
+end
+
+T.test("uptilt puts the horizon low; it is curved like a wide lens, ends toward the centre", function()
+  local h, f, r = setup({ CAMERA = 35, HUD = 0 })
   lcd.clear()
   r.draw(-1024)
-  -- real horizon at y = 32 + 40 * tan(35) ~ 60, inside the 6 px edge margin: pinned dotted at row 57
-  -- (sitting on the ground the grid also lies on rows 58-63, so check the pinned row itself)
-  local n = 0
-  for x = 0, 127 do n = n + h.fb():get(x, 63 - r.EDGE) end
-  T.ok(n > 50, "pinned dotted horizon on row " .. (63 - r.EDGE) .. ": " .. n .. " px")
-  local row
-  -- nose down: the real horizon comes into view, solid, at its true row
-  f.pz, f.ground = 5, false
-  local a = 25 * math.pi / 180 -- pitch 25 deg down: horizon at 32 + 40 * tan(10) ~ 39
-  f.fx, f.fz, f.uy, f.uz = math.cos(a), -math.sin(a), math.sin(a), math.cos(a)
-  f.fy, f.ux = 0, 0
-  f.fx, f.fy = 0, math.cos(a)
-  f.uy = math.sin(a)
+  -- real horizon at y = 32 + 40 * tan(35) ~ 60 in the middle; 15 % of 28 px ~ 4 px higher at the ends
+  local mid, left, right = lit(h, 64, 56, 61), lit(h, 5, 50, 59), lit(h, 122, 50, 59)
+  T.ok(mid == 60, "middle row " .. tostring(mid)) -- int
+  T.ok(left and left <= 57 and right and right <= 57, "ends " .. tostring(left) .. " " .. tostring(right))
+  -- nose down: the horizon comes up, nearly straight close to the centre
+  nose(f, 5, 25) -- horizon at 32 + 40 * tan(10) ~ 39
   lcd.clear()
   r.draw(-1024)
-  row = 0
-  for y = 30, 50 do
-    local n = 0
-    for x = 0, 127 do n = n + h.fb():get(x, y) end
-    if n > 100 then row = y end
+  local row = lit(h, 50, 30, 50)
+  T.ok(row and row >= 38 and row <= 40, "true horizon row " .. tostring(row))
+end)
+
+T.test("horizon out of view: only a short piece pinned near the edge, not a line across the ground", function()
+  local h, f, r = setup({ CAMERA = 35, HUD = 0 })
+  nose(f, 20, 80) -- high, looking 45 deg down: the horizon is above the screen
+  lcd.clear()
+  r.draw(-1024)
+  local n, lo, hi = 0, 128, -1
+  for x = 0, 127 do
+    if h.fb():get(x, r.EDGE) == 1 then -- int
+      n = n + 1
+      if x < lo then lo = x end
+      if x > hi then hi = x end
+    end
   end
-  T.ok(row >= 38 and row <= 40, "true horizon row " .. row)
+  T.ok(n >= 28 and lo >= 44 and hi <= 84, "pinned piece on row " .. r.EDGE .. ": " .. n .. " px, x " .. lo .. ".." .. hi)
 end)
 
 T.test("nothing is ever drawn off-screen: 3000 random poses inside and around the obstacles", function()
