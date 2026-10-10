@@ -113,8 +113,9 @@ end
 
 -- horizon: screen points whose ray is level ((sx-CX)*rz + (CY-sy)*uz + F*fz = 0)
 -- When it is out of view or only in the outer rows/columns (nose up with a high camera angle; some
--- radios' bezels hide the screen's edge rows) it is pinned, dotted, a few pixels inside the screen with
--- the same tilt, so the roll is always visible. Drawn before the objects, so buildings still hide it.
+-- radios' bezels hide the screen's edge rows) it is pinned a few pixels inside the screen with the same
+-- tilt, so the roll is always visible. Always solid: a dotted line disappeared among the dotted grid lines
+-- that bunch up near the horizon. Drawn before the objects, so buildings still hide it.
 M.EDGE = 6 -- pixels at each screen edge treated as "not reliably visible"
 local function horizon()
   if rz * rz > uz * uz then
@@ -124,7 +125,7 @@ local function horizon()
     if (xa < e and xb < e) or (xa > 127 - e and xb > 127 - e) then
       local d = (xa + xb) / 2
       d = (d > 63 and 127 - e or e) - d
-      seg2(xa + d, -1, xb + d, 64, DOTTED)
+      seg2(xa + d, -1, xb + d, 64, SOLID)
     else
       seg2(xa, -1, xb, 64, SOLID)
     end
@@ -134,7 +135,7 @@ local function horizon()
     if (ya < e and yb < e) or (ya > 63 - e and yb > 63 - e) then
       local d = (ya + yb) / 2
       d = (d > 31 and 63 - e or e) - d
-      seg2(-1, ya + d, 128, yb + d, DOTTED)
+      seg2(-1, ya + d, 128, yb + d, SOLID)
     else
       seg2(-1, ya, 128, yb, SOLID)
     end
