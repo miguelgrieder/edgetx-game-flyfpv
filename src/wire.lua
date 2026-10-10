@@ -12,26 +12,27 @@ return function(tr, seg3, VX, VY, VZ, CX, CY, F, basis, R)
   function S.tube(i, pat)
     local W = flight.W
     local x, y, z, a, l = W.tx[i], W.ty[i], W.tz[i], W.ta[i], W.tl[i]
-    local h, L = W.ts[i] / 2, l / 2
+    local s = W.ts[i]
+    local h, L = s / 2, l / 2
+    -- one corner transformed; the others by adding the opening's sides and the length, each a camera
+    -- axis scaled (u, v: the opening's two sides, d: along the tunnel)
+    local rx, ry, rz, ux, uy, uz, fx, fy, fz = basis()
+    local cx, cy, cz, ax, ay, az, bx, by, bz, dx, dy, dz
     if a == 2 then -- int
-      VX[1], VY[1], VZ[1] = tr(x - h, y - h, z)
-      VX[2], VY[2], VZ[2] = tr(x + h, y - h, z)
-      VX[3], VY[3], VZ[3] = tr(x + h, y + h, z)
-      VX[4], VY[4], VZ[4] = tr(x - h, y + h, z)
-      VX[5], VY[5], VZ[5] = tr(x - h, y - h, z + l)
+      cx, cy, cz = tr(x - h, y - h, z)
+      ax, ay, az, bx, by, bz, dx, dy, dz = s * rx, s * ux, s * fx, s * ry, s * uy, s * fy, l * rz, l * uz, l * fz
     elseif a == 0 then -- int
-      VX[1], VY[1], VZ[1] = tr(x - h, y - L, z)
-      VX[2], VY[2], VZ[2] = tr(x + h, y - L, z)
-      VX[3], VY[3], VZ[3] = tr(x + h, y - L, z + 2 * h)
-      VX[4], VY[4], VZ[4] = tr(x - h, y - L, z + 2 * h)
-      VX[5], VY[5], VZ[5] = tr(x - h, y + L, z)
+      cx, cy, cz = tr(x - h, y - L, z)
+      ax, ay, az, bx, by, bz, dx, dy, dz = s * rx, s * ux, s * fx, s * rz, s * uz, s * fz, l * ry, l * uy, l * fy
     else
-      VX[1], VY[1], VZ[1] = tr(x - L, y - h, z)
-      VX[2], VY[2], VZ[2] = tr(x - L, y + h, z)
-      VX[3], VY[3], VZ[3] = tr(x - L, y + h, z + 2 * h)
-      VX[4], VY[4], VZ[4] = tr(x - L, y - h, z + 2 * h)
-      VX[5], VY[5], VZ[5] = tr(x + L, y - h, z)
+      cx, cy, cz = tr(x - L, y - h, z)
+      ax, ay, az, bx, by, bz, dx, dy, dz = s * ry, s * uy, s * fy, s * rz, s * uz, s * fz, l * rx, l * ux, l * fx
     end
+    VX[1], VY[1], VZ[1] = cx, cy, cz
+    VX[2], VY[2], VZ[2] = cx + ax, cy + ay, cz + az
+    VX[3], VY[3], VZ[3] = cx + ax + bx, cy + ay + by, cz + az + bz
+    VX[4], VY[4], VZ[4] = cx + bx, cy + by, cz + bz
+    VX[5], VY[5], VZ[5] = cx + dx, cy + dy, cz + dz
     local n = floor(l / 6 + 0.5)
     if n < 1 then n = 1 end
     local dx, dy, dz = (VX[5] - VX[1]) / n, (VY[5] - VY[1]) / n, (VZ[5] - VZ[1]) / n

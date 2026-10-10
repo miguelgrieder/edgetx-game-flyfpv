@@ -4,6 +4,7 @@
 -- Built by render with its projection helpers: use("solid")(tr, seg2, seg3, NEAR, CX, CY, F, drawLine).
 local use = ...
 local flight = use("flight")
+local ERASE, fillRect = ERASE, lcd.drawFilledRectangle -- looked up once (a global is a table lookup)
 -- rounding with arithmetic (x - x % 1 = floor): math.floor/ceil are C calls, expensive on the radio
 local function floor(x) return x - x % 1 end
 
@@ -14,10 +15,12 @@ return function(tr, seg2, seg3, NEAR, CX, CY, F, drawLine)
 
   -- faces by corner index: x1 side, x2 side, y1 side, y2 side, top, bottom (seen only under a floating box)
   local FACES = { 1, 4, 8, 5, 2, 3, 7, 6, 1, 2, 6, 5, 4, 3, 7, 8, 5, 6, 7, 8, 1, 2, 3, 4 }
-  -- box edges as corner pairs with their two faces (1 x1, 2 x2, 3 y1, 4 y2, 5 top, 6 bottom)
+  -- faces seen (1 x1, 2 x2, 3 y1, 4 y2, 5 top, 6 bottom). The 12 box edges are written out below as
+  -- "corners a, b between faces f, g": tested as locals, a table walk per edge was a big part of a box
+  local V1, V2, V3, V4, V5, V6 = false, false, false, false, false, false
+  local VIS = { false, false, false, false, false, false }
   local EB = { 1, 2, 3, 6, 2, 3, 2, 6, 3, 4, 4, 6, 4, 1, 1, 6, 5, 6, 3, 5, 6, 7, 2, 5, 7, 8, 4, 5, 8, 5, 1, 5,
     1, 5, 1, 3, 2, 6, 2, 3, 3, 7, 2, 4, 4, 8, 1, 4 }
-  local VIS = { false, false, false, false, false, false } -- faces seen
   local front = true -- whole box in front of the near plane
   local QX, QY, QZ, PX, PY = {}, {}, {}, {}, {}
   -- the fill works in bands of 2 screen rows (half the work; edges are still drawn exactly):
@@ -150,7 +153,7 @@ return function(tr, seg2, seg3, NEAR, CX, CY, F, drawLine)
       end
     end
     if n < 3 then return end
-    for i = 1, n do PX[i], PY[i] = CX + F * QX[i] / QZ[i], CY - F * QY[i] / QZ[i] end
+    for i = 1, n do PX[i], PY[i] = 64 + 40 * QX[i] / QZ[i], 32 - 40 * QY[i] / QZ[i] end -- CX, F, CY
     for i = 1, n do
       local j = i % n + 1
       walk(PX[i], PY[i], PX[j], PY[j])
@@ -185,29 +188,38 @@ return function(tr, seg2, seg3, NEAR, CX, CY, F, drawLine)
     VX[7], VY[7], VZ[7] = bx + yx + zx, by + yy + zy, bz + yz + zz
     VX[8], VY[8], VZ[8] = dx + zx, dy + zy, dz + zz
     -- a face is seen when the camera is on its outer side
-    VIS[1], VIS[2], VIS[3], VIS[4], VIS[5], VIS[6] = cpx < x1, cpx > x2, cpy < y1, cpy > y2, cpz > z2, cpz < z1
+    V1, V2, V3, V4, V5, V6 = cpx < x1, cpx > x2, cpy < y1, cpy > y2, cpz > z2, cpz < z1
     front = true
     for k = 1, 8 do
       local z = VZ[k]
-      if z < NEAR then front = false break end
-      local inv = F / z
-      SX[k], SY[k] = CX + VX[k] * inv, CY - VY[k] * inv
+      if z < 0.05 then front = false break end -- NEAR (numbers, not upvalues: see render)
+      local inv = 40 / z -- F
+      SX[k], SY[k] = 64 + VX[k] * inv, 32 - VY[k] * inv -- CX, CY
     end
     if front then
       -- the outline = the edges between a seen and an unseen face; each is on the left or the right
       -- side of the (convex) outline, so it only sets that side of the rows it crosses
       local mx = (SX[1] + SX[2] + SX[3] + SX[4] + SX[5] + SX[6] + SX[7] + SX[8]) / 8
       local my = (SY[1] + SY[2] + SY[3] + SY[4] + SY[5] + SY[6] + SY[7] + SY[8]) / 8
-      for e = 1, 48, 4 do
-        if VIS[EB[e + 2]] ~= VIS[EB[e + 3]] then
-          local a, b = EB[e], EB[e + 1]
-          side(SX[a], SY[a], SX[b], SY[b], mx, my)
-        end
-      end
+      if V3 ~= V6 then side(SX[1], SY[1], SX[2], SY[2], mx, my) end
+      if V2 ~= V6 then side(SX[2], SY[2], SX[3], SY[3], mx, my) end
+      if V4 ~= V6 then side(SX[3], SY[3], SX[4], SY[4], mx, my) end
+      if V1 ~= V6 then side(SX[4], SY[4], SX[1], SY[1], mx, my) end
+      if V3 ~= V5 then side(SX[5], SY[5], SX[6], SY[6], mx, my) end
+      if V2 ~= V5 then side(SX[6], SY[6], SX[7], SY[7], mx, my) end
+      if V4 ~= V5 then side(SX[7], SY[7], SX[8], SY[8], mx, my) end
+      if V1 ~= V5 then side(SX[8], SY[8], SX[5], SY[5], mx, my) end
+      if V1 ~= V3 then side(SX[1], SY[1], SX[5], SY[5], mx, my) end
+      if V2 ~= V3 then side(SX[2], SY[2], SX[6], SY[6], mx, my) end
+      if V2 ~= V4 then side(SX[3], SY[3], SX[7], SY[7], mx, my) end
+      if V1 ~= V4 then side(SX[4], SY[4], SX[8], SY[8], mx, my) end
     else
-      for f = 1, 6 do
-        if VIS[f] then face(f) end
-      end
+      if V1 then face(1) end
+      if V2 then face(2) end
+      if V3 then face(3) end
+      if V4 then face(4) end
+      if V5 then face(5) end
+      if V6 then face(6) end
     end
   end
 
@@ -233,7 +245,7 @@ return function(tr, seg2, seg3, NEAR, CX, CY, F, drawLine)
       end
       if not (il and rb >= 0 and il == rl and ir == rr) then
         if rb >= 0 then
-          lcd.drawFilledRectangle(rl, 2 * rb, rr - rl + 1, 2 * (b - rb), ERASE)
+          fillRect(rl, 2 * rb, rr - rl + 1, 2 * (b - rb), ERASE)
           calls = calls + 1
         end
         if il then rb, rl, rr = b, il, ir else rb = -1 end
@@ -245,11 +257,27 @@ return function(tr, seg2, seg3, NEAR, CX, CY, F, drawLine)
 
   -- the seen faces' edges, each once (after S.outline)
   function S.edges(pat)
-    for e = 1, 48, 4 do
-      if VIS[EB[e + 2]] or VIS[EB[e + 3]] then
-        local a, b = EB[e], EB[e + 1]
-        if front then seg2(SX[a], SY[a], SX[b], SY[b], pat)
-        else seg3(VX[a], VY[a], VZ[a], VX[b], VY[b], VZ[b], pat) end
+    if front then
+      if V3 or V6 then seg2(SX[1], SY[1], SX[2], SY[2], pat) end
+      if V2 or V6 then seg2(SX[2], SY[2], SX[3], SY[3], pat) end
+      if V4 or V6 then seg2(SX[3], SY[3], SX[4], SY[4], pat) end
+      if V1 or V6 then seg2(SX[4], SY[4], SX[1], SY[1], pat) end
+      if V3 or V5 then seg2(SX[5], SY[5], SX[6], SY[6], pat) end
+      if V2 or V5 then seg2(SX[6], SY[6], SX[7], SY[7], pat) end
+      if V4 or V5 then seg2(SX[7], SY[7], SX[8], SY[8], pat) end
+      if V1 or V5 then seg2(SX[8], SY[8], SX[5], SY[5], pat) end
+      if V1 or V3 then seg2(SX[1], SY[1], SX[5], SY[5], pat) end
+      if V2 or V3 then seg2(SX[2], SY[2], SX[6], SY[6], pat) end
+      if V2 or V4 then seg2(SX[3], SY[3], SX[7], SY[7], pat) end
+      if V1 or V4 then seg2(SX[4], SY[4], SX[8], SY[8], pat) end
+    else
+      -- a box cut by the near plane (rarer): the edges from a table, corners a, b between faces f, g
+      VIS[1], VIS[2], VIS[3], VIS[4], VIS[5], VIS[6] = V1, V2, V3, V4, V5, V6
+      for e = 1, 48, 4 do
+        if VIS[EB[e + 2]] or VIS[EB[e + 3]] then
+          local a, b = EB[e], EB[e + 1]
+          seg3(VX[a], VY[a], VZ[a], VX[b], VY[b], VZ[b], pat)
+        end
       end
     end
   end

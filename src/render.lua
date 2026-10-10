@@ -9,6 +9,7 @@ local M = {}
 
 local floor, sin, cos, sqrt = math.floor, math.sin, math.cos, math.sqrt
 local drawLine = lcd.drawLine -- looked up once: it is called hundreds of times per frame
+local FORCE, SOLID, DOTTED = FORCE, SOLID, DOTTED -- globals are a table lookup each time
 M.F = 40 -- focal length in px: ~116 deg horizontal field of view
 M.NEAR = 0.05 -- near plane (m)
 M.FAR = flight.far or 120 -- objects farther than this are skipped (m); a map can see less (map.far)
@@ -16,6 +17,8 @@ M.SOLID_D = 40 -- nearer than this: solid lines, farther: dotted
 M.GRID_N = 3 -- grid lines each side of the quad (farther lines pile up at the horizon)
 M.BUDGET = 400 -- max lcd calls per frame for the 3D view (edges + fill rows)
 local CX, CY, F, NEAR = 64, 32, M.F, M.NEAR
+-- (the hottest lines write these as numbers, 64 32 40 0.05: in Lua an upvalue costs an instruction each
+-- time it is read, a number in the code nothing)
 
 -- camera: position and basis (right, up, forward) in world coordinates
 local px, py, pz, rx, ry, rz, ux, uy, uz, fx, fy, fz = 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0
@@ -40,24 +43,8 @@ local function tr(x, y, z)
 end
 M.tr = tr
 
--- Liang-Barsky against the screen rectangle 0..127 x 0..63
 -- No float == / ~= against an integer anywhere in the geometry: EdgeTX 2.12.2's Lua floors the float
 -- first (0.87 ~= 0 is false, fixed in 2.12.4), which hid the level horizon on a GX12. Use < and >.
-local t0, t1
-local function edge(p, q)
-  if p < 0 then
-    local r = q / p
-    if r > t1 then return false end
-    if r > t0 then t0 = r end
-  elseif p > 0 then
-    local r = q / p
-    if r < t0 then return false end
-    if r < t1 then t1 = r end
-  else
-    return q >= 0
-  end
-  return true
-end
 
 -- draw a screen-space segment (floats, any size), clipped
 -- (v - v % 1 rounds without a function call: arithmetic is what costs on the radio)
@@ -71,9 +58,9 @@ local function seg2(x1, y1, x2, y2, pat)
     if d < top then top = d end
     return
   end
+  -- Liang-Barsky against the screen rectangle 0..127 x 0..63: the part t0..t1 of the segment inside
   local dx, dy = x2 - x1, y2 - y1
-  t0, t1 = 0, 1
-  -- Liang-Barsky, the x edges inline (they reject most lines), the y edges through edge()
+  local t0, t1 = 0, 1
   if not (dx < 0 or dx > 0) then
     if x1 < 0 or x1 > 127 then return end
   else
@@ -83,28 +70,35 @@ local function seg2(x1, y1, x2, y2, pat)
     if rb < 1 then t1 = rb end
     if t0 > t1 then return end
   end
-  if edge(-dy, y1) and edge(dy, 63 - y1) then
-    local xa, ya, xb, yb = x1 + t0 * dx + 0.5, y1 + t0 * dy + 0.5, x1 + t1 * dx + 0.5, y1 + t1 * dy + 0.5
-    ya, yb = ya - ya % 1, yb - yb % 1
-    drawLine(xa - xa % 1, ya, xb - xb % 1, yb, pat, FORCE)
-    lines = lines + 1
-    if ya < top then top = ya end
-    if yb < top then top = yb end
+  if not (dy < 0 or dy > 0) then
+    if y1 < 0 or y1 > 63 then return end
+  else
+    local ra, rb = -y1 / dy, (63 - y1) / dy
+    if dy < 0 then ra, rb = rb, ra end
+    if ra > t0 then t0 = ra end
+    if rb < t1 then t1 = rb end
+    if t0 > t1 then return end
   end
+  local xa, ya, xb, yb = x1 + t0 * dx + 0.5, y1 + t0 * dy + 0.5, x1 + t1 * dx + 0.5, y1 + t1 * dy + 0.5
+  ya, yb = ya - ya % 1, yb - yb % 1
+  drawLine(xa - xa % 1, ya, xb - xb % 1, yb, pat, FORCE)
+  lines = lines + 1
+  if ya < top then top = ya end
+  if yb < top then top = yb end
 end
 M.seg2 = seg2
 
 -- draw a camera-space segment: near-plane clip, project, screen clip
 local function seg3(xa, ya, za, xb, yb, zb, pat)
-  if za < NEAR then
-    if zb < NEAR then return end
-    local t = (NEAR - za) / (zb - za)
-    xa, ya, za = xa + (xb - xa) * t, ya + (yb - ya) * t, NEAR
-  elseif zb < NEAR then
-    local t = (NEAR - zb) / (za - zb)
-    xb, yb, zb = xb + (xa - xb) * t, yb + (ya - yb) * t, NEAR
+  if za < 0.05 then
+    if zb < 0.05 then return end
+    local t = (0.05 - za) / (zb - za)
+    xa, ya, za = xa + (xb - xa) * t, ya + (yb - ya) * t, 0.05
+  elseif zb < 0.05 then
+    local t = (0.05 - zb) / (za - zb)
+    xb, yb, zb = xb + (xa - xb) * t, yb + (ya - yb) * t, 0.05
   end
-  seg2(CX + F * xa / za, CY - F * ya / za, CX + F * xb / zb, CY - F * yb / zb, pat)
+  seg2(64 + 40 * xa / za, 32 - 40 * ya / za, 64 + 40 * xb / zb, 32 - 40 * yb / zb, pat)
 end
 M.seg3 = seg3
 
@@ -185,29 +179,30 @@ end
 -- solid boxes live in their own file (keeps each file small enough to compile on the radio)
 local solid = use("solid")(tr, seg2, seg3, NEAR, CX, CY, F, drawLine)
 
+-- corner scratch space for the wire tunnels (wire.lua)
 local VX, VY, VZ = {}, {}, {}
 for i = 1, 8 do VX[i], VY[i], VZ[i] = 0, 0, 0 end
--- box corners 1..4 bottom (x1y1, x2y1, x2y2, x1y2), 5..8 top; 12 edges
-local EDGES = { 1, 2, 2, 3, 3, 4, 4, 1, 5, 6, 6, 7, 7, 8, 8, 5, 1, 5, 2, 6, 3, 7, 4, 8 }
 
 -- gates: square opening + two legs to the ground (see-through, no fill)
 local function gate(i, pat)
   local W = flight.W
   local hw, z1, z2 = flight.GATE_W, flight.GATE_Z1, flight.GATE_Z2
   local x, y = W.gx[i], W.gy[i]
-  local ax, ay = W.ga[i] == 0 and hw or 0, W.ga[i] == 0 and 0 or hw -- int
-  VX[1], VY[1], VZ[1] = tr(x - ax, y - ay, z1)
-  VX[2], VY[2], VZ[2] = tr(x + ax, y + ay, z1)
-  VX[3], VY[3], VZ[3] = tr(x + ax, y + ay, z2)
-  VX[4], VY[4], VZ[4] = tr(x - ax, y - ay, z2)
-  VX[5], VY[5], VZ[5] = tr(x - ax, y - ay, 0)
-  VX[6], VY[6], VZ[6] = tr(x + ax, y + ay, 0)
-  for e = 1, 8, 2 do
-    local a, b = EDGES[e], EDGES[e + 1]
-    seg3(VX[a], VY[a], VZ[a], VX[b], VY[b], VZ[b], pat)
-  end
-  seg3(VX[1], VY[1], VZ[1], VX[5], VY[5], VZ[5], pat)
-  seg3(VX[2], VY[2], VZ[2], VX[6], VY[6], VZ[6], pat)
+  local along = W.ga[i] == 0 -- int; the opening spans x (else y)
+  local ax, ay = along and hw or 0, along and 0 or hw
+  -- the left foot transformed; the rest by adding the opening's width (a camera axis scaled) and heights
+  local bx, by, bz = tr(x - ax, y - ay, 0)
+  local w = 2 * hw
+  local wx, wy, wz
+  if along then wx, wy, wz = w * rx, w * ux, w * fx else wx, wy, wz = w * ry, w * uy, w * fy end
+  local ax1, ay1, az1 = bx + z1 * rz, by + z1 * uz, bz + z1 * fz -- bottom bar, left
+  local ax2, ay2, az2 = bx + z2 * rz, by + z2 * uz, bz + z2 * fz -- top bar, left
+  seg3(ax1, ay1, az1, ax1 + wx, ay1 + wy, az1 + wz, pat)
+  seg3(ax1 + wx, ay1 + wy, az1 + wz, ax2 + wx, ay2 + wy, az2 + wz, pat)
+  seg3(ax2 + wx, ay2 + wy, az2 + wz, ax2, ay2, az2, pat)
+  seg3(ax2, ay2, az2, ax1, ay1, az1, pat)
+  seg3(ax1, ay1, az1, bx, by, bz, pat) -- legs
+  seg3(ax1 + wx, ay1 + wy, az1 + wz, bx + wx, by + wy, bz + wz, pat)
 end
 
 -- tunnels and stars live in wire.lua, loaded on the first frame only for maps that have them
@@ -226,12 +221,12 @@ local function objects()
   for i = 1, W.nv do
     local dx, dy, dz, r = MX[i] - cpx, MY[i] - cpy, MZ[i] - cpz, RAD[i]
     local cz = dx * cfx + dy * cfy + dz * cfz
-    if cz + r > NEAR then
+    if cz + r > 0.05 then
       local cx, cy = dx * crx + dy * cry + dz * crz, dx * cux + dy * cuy + dz * cuz
       local d, far = cx * cx + cy * cy + cz * cz, FAR + r
       if d < far * far then
-        local zz = cz > NEAR and cz or NEAR
-        if (cx < 0 and -cx or cx) - r < zz * KX and (cy < 0 and -cy or cy) - r < zz * KY then
+        local zz = cz > 0.05 and cz or 0.05
+        if (cx < 0 and -cx or cx) - r < zz * 1.6 and (cy < 0 and -cy or cy) - r < zz * 0.8 then -- KX, KY
           n = n + 1
           ORD[n], DST[n] = i, d
         end

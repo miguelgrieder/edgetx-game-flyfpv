@@ -70,7 +70,7 @@ local h = H.new({ sd = "bench", fast = true })
 local cf, f = h.config, h.flight
 cf.defaults()
 cf.v.CRASH = 0
-f.load(h.radio(h.app.use, "map_city", true)); f.setup(); f.spawn()
+f.load(h.radio(h.app.use, os.getenv("PMAP") or "map_city", true)); f.setup(); f.spawn()
 local seed, s = 5, { 0, 0, 0, 0 }
 local function rnd() seed = (seed * 16807) % 2147483647 return seed / 2147483647 * 2 - 1 end
 local pn, pc = 0, 0

@@ -178,12 +178,12 @@ T.test("on every map the gate and tunnel openings are clear of buildings and pol
   end
 end)
 
--- CITY runs 18-20 FPS on a GX12: no map may cost much more per frame in its worst view (tools/mapcost.lua)
-T.test("no map's worst view costs more than 10 % over CITY's (Lua instructions and lcd calls)", function()
+-- CITY ran 18-20 FPS on a GX12 when its worst view in this scan cost 35k instructions and 175 lcd calls
+-- (v2.0): no map may cost more than that + 10 % in its worst view (tools/mapcost.lua)
+T.test("no map's worst view costs more than CITY's did at 18-20 FPS + 10 %", function()
   local scan = dofile("tools/mapcost.lua")
-  local ci, cl = scan("map_city")
   for _, m in ipairs(MAPS) do
     local i, l = scan(m)
-    T.ok(i <= ci * 1.1 and l <= cl * 1.1, m .. ": " .. i .. "k instructions, " .. l .. " lcd calls (CITY " .. ci .. "k, " .. cl .. ")")
+    T.ok(i <= 38 and l <= 192, m .. ": " .. i .. "k instructions, " .. l .. " lcd calls (budget 38k, 192)")
   end
 end)
