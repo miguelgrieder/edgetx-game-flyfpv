@@ -20,6 +20,9 @@ local CX, CY, F, NEAR = 64, 32, M.F, M.NEAR
 -- camera: position and basis (right, up, forward) in world coordinates
 local px, py, pz, rx, ry, rz, ux, uy, uz, fx, fy, fz = 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0
 local lines, rows = 0, 0
+-- topmost screen row drawn on so far this frame: everything above it is still blank, so solid boxes
+-- don't need to erase there
+M.top = 64
 
 function M.camera()
   local t = flight.cam
@@ -53,13 +56,36 @@ local function edge(p, q)
 end
 
 -- draw a screen-space segment (floats, any size), clipped
+-- (v - v % 1 rounds without a function call: arithmetic is what costs on the radio)
 local function seg2(x1, y1, x2, y2, pat)
+  if x1 >= 0 and x1 <= 127 and y1 >= 0 and y1 <= 63 and x2 >= 0 and x2 <= 127 and y2 >= 0 and y2 <= 63 then
+    local a, b, c, d = x1 + 0.5, y1 + 0.5, x2 + 0.5, y2 + 0.5
+    b, d = b - b % 1, d - d % 1
+    drawLine(a - a % 1, b, c - c % 1, d, pat, FORCE)
+    lines = lines + 1
+    if b < M.top then M.top = b end
+    if d < M.top then M.top = d end
+    return
+  end
   local dx, dy = x2 - x1, y2 - y1
   t0, t1 = 0, 1
-  if edge(-dx, x1) and edge(dx, 127 - x1) and edge(-dy, y1) and edge(dy, 63 - y1) then
-    drawLine(floor(x1 + t0 * dx + 0.5), floor(y1 + t0 * dy + 0.5),
-      floor(x1 + t1 * dx + 0.5), floor(y1 + t1 * dy + 0.5), pat, FORCE)
+  -- Liang-Barsky, the x edges inline (they reject most lines), the y edges through edge()
+  if dx == 0 then
+    if x1 < 0 or x1 > 127 then return end
+  else
+    local ra, rb = -x1 / dx, (127 - x1) / dx
+    if dx < 0 then ra, rb = rb, ra end
+    if ra > 0 then t0 = ra end
+    if rb < 1 then t1 = rb end
+    if t0 > t1 then return end
+  end
+  if edge(-dy, y1) and edge(dy, 63 - y1) then
+    local xa, ya, xb, yb = x1 + t0 * dx + 0.5, y1 + t0 * dy + 0.5, x1 + t1 * dx + 0.5, y1 + t1 * dy + 0.5
+    ya, yb = ya - ya % 1, yb - yb % 1
+    drawLine(xa - xa % 1, ya, xb - xb % 1, yb, pat, FORCE)
     lines = lines + 1
+    if ya < M.top then M.top = ya end
+    if yb < M.top then M.top = yb end
   end
 end
 M.seg2 = seg2
@@ -86,12 +112,29 @@ local function line(x1, y1, z1, x2, y2, z2, pat)
 end
 
 -- horizon: screen points whose ray is level ((sx-CX)*rz + (CY-sy)*uz + F*fz = 0)
+-- When it is out of view (nose up with a high camera angle, looking at the sky...) it is pinned, dotted,
+-- to the nearest screen edge with the same tilt, so the roll is always visible. Drawn before the objects,
+-- so buildings still hide it.
 local function horizon()
   if rz * rz > uz * uz then
     -- steep line: x as a function of y
-    seg2(CX - ((CY + 1) * uz + F * fz) / rz, -1, CX - ((CY - 64) * uz + F * fz) / rz, 64, SOLID)
+    local xa, xb = CX - ((CY + 1) * uz + F * fz) / rz, CX - ((CY - 64) * uz + F * fz) / rz
+    if (xa < 0 and xb < 0) or (xa > 127 and xb > 127) then
+      local d = (xa + xb) / 2
+      d = (d > 127 and 125 or 2) - d
+      seg2(xa + d, -1, xb + d, 64, DOTTED)
+    else
+      seg2(xa, -1, xb, 64, SOLID)
+    end
   elseif uz ~= 0 then
-    seg2(-1, CY + ((-1 - CX) * rz + F * fz) / uz, 128, CY + ((128 - CX) * rz + F * fz) / uz, SOLID)
+    local ya, yb = CY + ((-1 - CX) * rz + F * fz) / uz, CY + ((128 - CX) * rz + F * fz) / uz
+    if (ya < 0 and yb < 0) or (ya > 63 and yb > 63) then
+      local d = (ya + yb) / 2
+      d = (d > 63 and 61 or 2) - d
+      seg2(-1, ya + d, 128, yb + d, DOTTED)
+    else
+      seg2(-1, ya, 128, yb, SOLID)
+    end
   end
 end
 
@@ -118,7 +161,7 @@ local function visible(x, y, z, r)
 end
 
 -- solid boxes live in their own file (keeps each file small enough to compile on the radio)
-local box = use("solid")(tr, seg2, seg3, NEAR, CX, CY, F, drawLine)
+local solid = use("solid")(tr, seg2, seg3, NEAR, CX, CY, F, drawLine)
 
 local VX, VY, VZ = {}, {}, {}
 for i = 1, 8 do VX[i], VY[i], VZ[i] = 0, 0, 0 end
@@ -187,7 +230,11 @@ local function objects()
     if i < 0 then gate(-i, pat)
     elseif K[i] == 2 then
       line((X1[i] + X2[i]) / 2, (Y1[i] + Y2[i]) / 2, Z1[i], (X1[i] + X2[i]) / 2, (Y1[i] + Y2[i]) / 2, Z2[i], pat) -- pole
-    else rows = rows + box(i, pat, px, py, pz) end
+    else
+      solid.outline(i, px, py, pz)
+      rows = rows + solid.erase(M.top)
+      solid.edges(pat)
+    end
   end
 end
 
@@ -215,7 +262,7 @@ end
 
 -- the whole view; returns the number of lcd calls of the 3D part (lines + fill rows)
 function M.draw(thr)
-  lines, rows = 0, 0
+  lines, rows, M.top = 0, 0, 64
   M.camera()
   horizon()
   grid()

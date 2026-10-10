@@ -41,3 +41,15 @@ One line each: what — why — discarded alternative.
 - DEBUG showed a fixed CPU number because on B&W radios `getUsage()` is the slowest frame since the script started (`100 * maxLuaDuration / LUA_TASK_PERIOD_TICKS` in api_general.cpp), not the current one; the 180-320 % seen was most likely the load/compile of the flight files. DEBUG now shows a live, smoothed frame rate from `getTime()` between frames, plus the Lua memory (which stays flat while flying because nothing is allocated per frame).
 - Faster solid boxes (PC render time in a heavy CITY view: 174 -> 90 us, same pixels): edges are walked once over the rows they cross instead of testing every edge on every row; when the whole box is in front of the camera each corner is projected once and only the outline (edges between a seen and an unseen face, at most 6) is rasterised; each edge is drawn once; `lcd.drawLine` is cached in a local. The radio has no double-precision FPU, so arithmetic is what costs.
 - `solid.lua` split out of `render.lua`: render had reached 69.9 KB of compile allocations, at the largest size known to compile on a GX12; now render 52 KB, solid 24 KB.
+
+## Third real-radio round: 10 FPS among buildings, horizon
+
+- EdgeTX gives a script one 50 ms slot per frame and continues an overrunning frame in the next slot, so the frame rate is 20 or 10 with nothing in between; heavy CITY views were just over the line. Optimised for **Lua instructions and C calls** (`tools/cost.lua`), not PC time: the radio has no double-precision FPU, so every arithmetic op and every math-library call is expensive.
+- Results (heavy CITY views): math-library calls per frame 307 -> 9 (render) and 50 -> 5 (physics); instructions 150k -> 115k over 6 views; lcd calls 299 -> ~165.
+  - rounding with `x - x % 1` instead of `math.floor/ceil`;
+  - box corners: 4 transforms + edge vectors instead of 8 transforms; one division per corner;
+  - solid fill in 2-row bands (edges stay exact); each outline edge only updates its side of the rows; equal bands erased as one rectangle;
+  - lines fully on screen skip clipping; the x half of the clipper is inlined;
+  - physics: small-angle series instead of sin/cos per substep, re-squaring without sqrt (vectors stay near unit), drag factor and commanded rates once per frame (angle mode's atan2/asin once per frame).
+- Tried and dropped: a front-to-back pass that skips buildings hidden behind nearer ones — it outlined every box twice and cost more than it saved (PC 101 -> 163 us in the street view).
+- Horizon: when the real horizon is out of view it is pinned, dotted, to the nearest screen edge with its tilt (roll stays readable); drawn before the objects so buildings still hide it — an OSD artificial horizon (would show through buildings and disagree with the scene).

@@ -1,5 +1,10 @@
 # Performance and memory
 
+> **Update (third real-radio round):** heavy CITY views: 17-23k Lua instructions and 9 math-library calls per
+> frame (was 21-29k and ~300); physics 2.7k instructions and 5 C calls at SIM SPEED 2x (was 3.2k and 50).
+> Soak max 184 lcd calls per frame (was 315). Compile: render 55 KB, solid 35 KB, flight 47 KB. Flying heap
+> 103 KB on the PC (the radio showed ~48 KB). Measure with `lua5.2 tools/cost.lua`.
+
 > **Update (faster solid boxes):** PC render time for a heavy CITY view 174 -> 90 us (physics with 8 substeps:
 > 11 us). Compile allocations: render 52 KB, solid 24 KB, flight 47 KB. Flying heap 99 KB (PC). DEBUG shows a
 > live frame rate now.

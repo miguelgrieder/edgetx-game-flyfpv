@@ -79,7 +79,8 @@ Sticks are read by function (`ail`, `ele`, `thr`, `rud`), so your radio's own st
 
 ## Screen
 
-Horizon (solid line, rolls with you), dotted ground grid around you, obstacles drawn **solid**: everything is
+Horizon (solid line, rolls with you; when it is out of view — nose up with a high camera angle — it is pinned,
+dotted, to the screen edge with the same tilt, so it is always visible), dotted ground grid around you, obstacles drawn **solid**: everything is
 drawn far to near and each box hides what is behind it (grid, horizon, other buildings); only the faces you can
 see get their edges drawn. Near objects have solid edges, far ones dotted; gates stay see-through. HUD: crosshair, throttle bar (left), ACRO/ANGLE, altitude in m (top right), speed in km/h (bottom
 right). DEBUG adds the live frame rate (FPS, 20 is the most an EdgeTX script can get) and the Lua memory in KB at the
@@ -112,6 +113,7 @@ and the selected map, whose data is copied and the file dropped). `config` stays
 | `lua5.2 tests/run_all.lua` | rates, physics, render (projection, clipping, no allocation), world (maps, budget, gates), menus, 13 screen goldens (src and dist) |
 | `lua5.2 tools/soak.lua 600` | random flying on every map × quad × crash setting |
 | `lua5.2 tools/memory.lua` | compile memory per file, Lua heap in menus and in flight |
+| `lua5.2 tools/cost.lua` | Lua instructions and C calls per frame in heavy CITY views (compares versions the way the radio would) |
 | `make sim` / `python tools/simhost/simu_host.py ...` | run it in the real EdgeTX firmware (Companion 2.12 DLLs), then `lua5.2 tools/simhost/compare.lua out/simu/fly out/simu/settings` |
 
 New golden after an intended visual change: `APPROVE=1 lua5.2 tests/run_all.lua test_screens`, look at
