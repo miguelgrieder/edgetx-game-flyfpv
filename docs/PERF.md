@@ -1,5 +1,18 @@
 # Performance and memory
 
+> **Update (v2.1, speed round):** Lua instructions per frame, mean over a scan of camera poses on all 9 maps
+> (`lua5.2 tools/bench.lua`, lcd calls swapped for an empty C function as on the radio): render 9163 -> 6260
+> (-32 %), sum of each map's worst view 214k -> 156k (-27 %); physics at SIM SPEED 2.0 2665 -> 1750 (-34 %).
+> CITY's worst view 29.9k -> 21.7k. Every change draws exactly the same pixels (`tools/samepix.lua`: 638k
+> frames before/after the near-plane fill, 165k for the rest) and flies the same to the last digit. What did it:
+> one transform per box / grid / gate / tunnel (the other corners are camera axes scaled), the view test inline
+> with box centres and radii worked out at load and hidden boxes skipped, near-plane faces filled a band at a
+> time (one call per row was a quarter of a close frame), the Liang-Barsky y edges inline, numbers instead of
+> upvalues in the hottest lines, the 12 box edges tested as locals, physics substeps on locals. Tried and
+> dropped: corners rounded once per box (no gain). Not done: passing unrounded floats to lcd.* (EdgeTX 2.12
+> floors them, checked in the simulator, but older firmware may round to nearest). Find hot spots with
+> `lua5.2 tools/profile.lua` (`HEAVY=15000` for the slow frames only).
+
 > **Update (third real-radio round):** heavy CITY views: 17-23k Lua instructions and 9 math-library calls per
 > frame (was 21-29k and ~300); physics 2.7k instructions and 5 C calls at SIM SPEED 2x (was 3.2k and 50).
 > Soak max 184 lcd calls per frame (was 315). Compile: render 55 KB, solid 35 KB, flight 47 KB. Flying heap
