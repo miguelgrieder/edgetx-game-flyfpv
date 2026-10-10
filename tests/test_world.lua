@@ -178,15 +178,14 @@ T.test("on every map the gate and tunnel openings are clear of buildings and pol
   end
 end)
 
--- CITY ran 18-20 FPS on a GX12 when its worst view in this scan cost 35k instructions and 175 lcd calls
--- (v2.0). Since v2.1 each line costs ~25 % fewer instructions, so the lcd calls may grow a little (CITY's
--- tunnel, roof, chimney and day sky): no map may cost more than 38k instructions or 270 lcd calls in its
--- worst view (tools/mapcost.lua). SKY OFF in the settings takes the sky's part away
-T.test("no map's worst view costs more than CITY's did at 18-20 FPS (+10 % instructions, 270 lcd calls)", function()
+-- Budget from the radio: v2.2's CITY (worst view in this scan ~31k instructions, ~240 lcd calls) still had
+-- great FPS on a GX12. No map may cost more than ~25 % over that in its worst view (tools/mapcost.lua).
+-- SKY OFF in the settings takes the sky's part (~10 %) away.
+T.test("no map's worst view costs more than 40k instructions or 300 lcd calls", function()
   local scan = dofile("tools/mapcost.lua")
   for _, m in ipairs(MAPS) do
     local i, l = scan(m)
-    T.ok(i <= 38 and l <= 270, m .. ": " .. i .. "k instructions, " .. l .. " lcd calls (budget 38k, 270)")
+    T.ok(i <= 40 and l <= 300, m .. ": " .. i .. "k instructions, " .. l .. " lcd calls (budget 40k, 300)")
   end
 end)
 

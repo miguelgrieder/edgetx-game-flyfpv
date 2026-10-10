@@ -267,6 +267,11 @@ local function objects()
     if lines + rows >= M.BUDGET then return end
     local i = ORD[k]
     local pat = DST[k] > far2 and DOTTED or SOLID
+    if i > 0 then
+      -- a box: solid by its nearest part (a tall tower's centre is high up and far)
+      local d = M.SOLID_D + RAD[i]
+      pat = DST[k] > d * d and DOTTED or SOLID
+    end
     if i < -W.ng then
       -- a tunnel's centre can be far while its near end is close: solid by its nearest part
       local d = M.SOLID_D + W.tl[-i - W.ng] / 2

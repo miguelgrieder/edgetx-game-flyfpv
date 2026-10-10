@@ -1,7 +1,7 @@
 -- Settings: ranges, defaults, quad types, .cfg persistence. Always loaded (small).
 local M = {}
 
-M.VERSION = "v2.2" -- shown on the title screen
+M.VERSION = "v2.3" -- shown on the title screen
 M.FILE = "/SCRIPTS/TOOLS/FREEFPV/freefpv.cfg"
 
 M.MAPS = { "CITY", "METRO", "SPACE", "T_OVAL", "T_TECH", "T_SKY" } -- T_: race tracks

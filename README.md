@@ -1,4 +1,4 @@
-# FreeFPV (v2.2)
+# FreeFPV (v2.3)
 
 An FPV **acro trainer** for **EdgeTX radios with a 128×64 black & white screen** (Radiomaster TX12 / TX12 MK2 /
 Boxer / Pocket / GX12 / Zorro, Jumper T-Pro / T-Lite / T20 — the `PCB=X7` family).
@@ -78,7 +78,7 @@ Sticks are read by function (`ail`, `ele`, `thr`, `rud`), so your radio's own st
 
 | MAP | what's there |
 |---|---|
-| CITY | blocks with 8 m streets and a square in the middle, a gate at the entrance; a tunnel in the street between two blocks, a roof with a hole on four poles where a block was, a chimney held in the air by four poles on top of a tower (fly in under it), a pole on top of another block |
+| CITY | blocks with 8 m streets and a square in the middle, a gate at the entrance; a tunnel in the street between two blocks, a roof with a hole on four poles where a block was, a chimney held in the air by four poles on top of a tower (fly in under it), a pole on top of a 60 m tower, a walkway between two buildings |
 | METRO | a bigger city: 14 blocks 32 m apart; a plaza with a roof on four poles (a hole to fly up through, a chimney above it), a bridge over the main avenue, a subway tunnel, lamp posts, gates. Blocks past 36 m are not drawn |
 | SPACE | starry sky over a wide grid; floating blocks, a station, platforms, poles, tunnels, rings and a chimney at every height; a roof with a hole on tall poles |
 | T_OVAL | race: fast 50 × 150 m loop; gates, a tunnel on the west straight, a floating ring on the east one |
