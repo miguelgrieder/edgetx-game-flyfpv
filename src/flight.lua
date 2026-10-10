@@ -59,7 +59,7 @@ function M.load(map)
     W.ng, W.gx[n], W.gy[n], W.ga[n] = n, x, y, a
     -- bars (invisible collision boxes): 2 posts, top, bottom; t = half thickness
     local t = 0.05
-    local ax, ay = a == 0 and 1 or 0, a == 0 and 0 or 1 -- along the opening
+    local ax, ay = a == 0 and 1 or 0, a == 0 and 0 or 1 -- along the opening (int)
     local bx, by = ay, ax -- across
     for s = -1, 1, 2 do
       local cx, cy = x + ax * s * (hw + t), y + ay * s * (hw + t)
@@ -84,7 +84,7 @@ function M.setup()
   M.SUB = math.floor(4 * M.scale + 0.5)
   M.DTR = 0.05 / M.SUB
   M.lagK = M.DTR / (q.lag + M.DTR)
-  M.angle, M.crashOn = v.MODE == 2, v.CRASH == 1
+  M.angle, M.crashOn = v.MODE == 2, v.CRASH == 1 -- int
   M.rpC, M.rpM, M.rpE, M.yC, M.yM, M.yE = v.RP_CENTER, v.RP_MAX, v.RP_EXPO, v.Y_CENTER, v.Y_MAX, v.Y_EXPO
   M.cam = v.CAMERA * RAD
 end

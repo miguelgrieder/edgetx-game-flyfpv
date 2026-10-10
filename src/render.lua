@@ -41,16 +41,20 @@ end
 M.tr = tr
 
 -- Liang-Barsky against the screen rectangle 0..127 x 0..63
+-- No float == / ~= against an integer anywhere in the geometry: EdgeTX 2.12.2's Lua floors the float
+-- first (0.87 ~= 0 is false, fixed in 2.12.4), which hid the level horizon on a GX12. Use < and >.
 local t0, t1
 local function edge(p, q)
-  if p == 0 then return q >= 0 end
-  local r = q / p
   if p < 0 then
+    local r = q / p
     if r > t1 then return false end
     if r > t0 then t0 = r end
-  else
+  elseif p > 0 then
+    local r = q / p
     if r < t0 then return false end
     if r < t1 then t1 = r end
+  else
+    return q >= 0
   end
   return true
 end
@@ -70,7 +74,7 @@ local function seg2(x1, y1, x2, y2, pat)
   local dx, dy = x2 - x1, y2 - y1
   t0, t1 = 0, 1
   -- Liang-Barsky, the x edges inline (they reject most lines), the y edges through edge()
-  if dx == 0 then
+  if not (dx < 0 or dx > 0) then
     if x1 < 0 or x1 > 127 then return end
   else
     local ra, rb = -x1 / dx, (127 - x1) / dx
@@ -129,7 +133,7 @@ local function horizon()
     else
       seg2(xa, -1, xb, 64, SOLID)
     end
-  elseif uz ~= 0 then
+  elseif uz < 0 or uz > 0 then
     local ya, yb = CY + ((-1 - CX) * rz + F * fz) / uz, CY + ((128 - CX) * rz + F * fz) / uz
     local e = M.EDGE
     if (ya < e and yb < e) or (ya > 63 - e and yb > 63 - e) then
@@ -177,7 +181,7 @@ local function gate(i, pat)
   local W = flight.W
   local hw, z1, z2 = flight.GATE_W, flight.GATE_Z1, flight.GATE_Z2
   local x, y = W.gx[i], W.gy[i]
-  local ax, ay = W.ga[i] == 0 and hw or 0, W.ga[i] == 0 and 0 or hw
+  local ax, ay = W.ga[i] == 0 and hw or 0, W.ga[i] == 0 and 0 or hw -- int
   VX[1], VY[1], VZ[1] = tr(x - ax, y - ay, z1)
   VX[2], VY[2], VZ[2] = tr(x + ax, y + ay, z1)
   VX[3], VY[3], VZ[3] = tr(x + ax, y + ay, z2)
@@ -232,7 +236,7 @@ local function objects()
     local i = ORD[k]
     local pat = DST[k] > far2 and DOTTED or SOLID
     if i < 0 then gate(-i, pat)
-    elseif K[i] == 2 then
+    elseif K[i] == 2 then -- int
       line((X1[i] + X2[i]) / 2, (Y1[i] + Y2[i]) / 2, Z1[i], (X1[i] + X2[i]) / 2, (Y1[i] + Y2[i]) / 2, Z2[i], pat) -- pole
     else
       solid.outline(i, px, py, pz)
@@ -272,8 +276,8 @@ function M.draw(thr)
   grid()
   objects()
   local n = lines + rows
-  if config.v.HUD == 1 then hud(thr) end
-  if config.v.DEBUG == 1 then debug() end
+  if config.v.HUD == 1 then hud(thr) end -- int
+  if config.v.DEBUG == 1 then debug() end -- int
   return n
 end
 

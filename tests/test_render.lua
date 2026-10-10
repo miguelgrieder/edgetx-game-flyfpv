@@ -82,3 +82,20 @@ T.test("no allocation while drawing (mock in no-raster mode: its own rasteriser 
   -- a one-off ~1 KB (interpreter stack) is fine; anything per frame would be 3000x
   T.ok(used < 2, "allocated " .. used .. " KB in 3000 frames")
 end)
+
+-- EdgeTX 2.12.2's Lua floors a float before == / ~= against an integer (0.87 ~= 0 is false; fixed in
+-- 2.12.4) and the PC's Lua 5.2 can't show it, so the geometry modules may compare with a number
+-- literal only where both sides are integers, marked "int" in a comment
+T.test("geometry never compares a float with == / ~= against a number (EdgeTX 2.12.2 Lua bug)", function()
+  for _, name in ipairs({ "render", "solid", "flight" }) do
+    local n = 0
+    for line in (T.read("src/" .. name .. ".lua"):gsub("\r", "") .. "\n"):gmatch("(.-)\n") do
+      n = n + 1
+      local code, comment = line:match("^(.-)%-%-(.*)$")
+      code, comment = code or line, comment or ""
+      if code:find("[=~]=%s*%-?%d") and not comment:find("int") then
+        error(name .. ".lua:" .. n .. ": == / ~= with a number literal: " .. line)
+      end
+    end
+  end
+end)

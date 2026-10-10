@@ -1,4 +1,4 @@
-# FreeFPV (v1.6)
+# FreeFPV (v1.7)
 
 An FPV **acro trainer** for **EdgeTX radios with a 128×64 black & white screen** (Radiomaster TX12 / TX12 MK2 /
 Boxer / Pocket / GX12 / Zorro, Jumper T-Pro / T-Lite / T20 — the `PCB=X7` family).
