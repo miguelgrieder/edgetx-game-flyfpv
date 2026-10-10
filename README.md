@@ -1,4 +1,4 @@
-# FlyFPV (v0.1.0)
+# FlyFPV (v0.1.1)
 
 An FPV **acro trainer** for **EdgeTX radios with a 128×64 black & white screen** (Radiomaster TX12 / TX12 MK2 /
 Boxer / Pocket / GX12 / Zorro, Jumper T-Pro / T-Lite / T20 — the `PCB=X7` family).
@@ -29,8 +29,8 @@ running the old version. Since v1.6 the game handles this for its own modules (`
 the build's stamp; each module is recompiled once per new build, logged in `compiled.txt`). Only
 `flyfpv.luac` next to `flyfpv.lua` is compiled by EdgeTX itself, so when updating **delete
 `SCRIPTS/TOOLS/flyfpv.luac`** (and, the first time you install v1.6, every `.luac` in `FLYFPV/`).
-If the radio shows "not enough memory" the first time it compiles, open the game again: files that
-were already compiled load from their `.luac`, which takes much less memory.
+The first start of a new version shows PREPARING 1/N while it compiles each file on its own, before anything
+else is loaded (compiling is the memory peak); later starts load the compiled `.luac` files, which takes much less.
 
 ## Safety
 
@@ -104,7 +104,7 @@ bottom left.
 | setting | range | default |
 |---|---|---|
 | MAP | CITY / METRO / SPACE / T_OVAL / T_TECH / T_SKY (T_ = race tracks) | CITY |
-| SKY | AUTO (the map's own) / DAY (clouds and a sun) / NIGHT (stars) / OFF (a little faster) | AUTO |
+| SKY | AUTO (the map's own) / DAY (clouds and a sun) / NIGHT (stars) / OFF (a little faster) | OFF (a sky needed more memory than a Pocket has) |
 | QUAD | WHOOP / 2.5IN / 3IN / 3.5IN / 5IN (also sets CAMERA ANGLE) | 5IN |
 | MODE | ACRO / ANGLE | ACRO |
 | CRASH | ON / OFF | ON |

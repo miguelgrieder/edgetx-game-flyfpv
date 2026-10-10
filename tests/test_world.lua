@@ -84,7 +84,7 @@ end)
 
 T.test("floating boxes and poles, tunnels, chimneys, roofs and stars build their collision boxes", function()
   local _, f = setupMap({ fbox = { 0, 10, 5, 4, 4, 2 }, fpole = { 3, 3, 2, 4 },
-    tube = { 0, 20, 2, 0, 10, 3, 10, 0, 1, 1, 0, 2, -10, 0, 0, 2, 8, 3 }, roof = { 0, -20, 6, 8, 3 }, stars = 20 })
+    tube = { 0, 20, 2, 0, 10, 3, 10, 0, 1, 1, 0, 2, -10, 0, 0, 2, 8, 3 }, roof = { 0, -20, 6, 8, 3 }, stars = 20 }, { SKY = 1 })
   local W = f.W
   T.eq(W.nb, 1 + 1 + 3 * 4 + 4 + 4) T.eq(W.nt, 3) T.eq(W.ns, 20)
   T.eq(W.z1[1], 5) T.eq(W.z2[1], 7) T.eq(W.kind[1], 1)
@@ -140,7 +140,7 @@ T.test("floating box seen from below, a tunnel from inside and the stars are dra
   f.pz, f.ground = 1.5, false
   lcd.clear()
   T.ok(r.draw(0) >= 20, "rings and rails")
-  h, f, r = setupMap({ stars = 40 }, { CAMERA = 35, HUD = 0 })
+  h, f, r = setupMap({ stars = 40 }, { CAMERA = 35, HUD = 0, SKY = 1 })
   f.pz, f.ground = 30, false
   lcd.clear()
   r.draw(0)
@@ -208,7 +208,7 @@ T.test("SKY: AUTO takes the map's sky, DAY gives clouds and a sun, NIGHT stars, 
   ns, nk, sun, s = sky(day, 4)
   T.eq(ns, 0) T.eq(nk, 0) T.eq(sun, false) T.eq(s, false)
   -- the sun is drawn where it is (looking at it, level): its disk is lit
-  local h, f, r = setupMap({ sky = "day", sun = { 0, 30 }, clouds = {} }, { CAMERA = 30, HUD = 0 })
+  local h, f, r = setupMap({ sky = "day", sun = { 0, 30 }, clouds = {} }, { CAMERA = 30, HUD = 0, SKY = 1 })
   f.pz, f.ground = 5, false
   lcd.clear()
   r.draw(0)

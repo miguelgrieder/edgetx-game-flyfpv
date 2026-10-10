@@ -18,7 +18,8 @@ local function readText(name)
   io.close(f)
   return s or ""
 end
-local stamp = string.match(readText("build.txt"), "%S+") -- nil: no build file (tests from src/)
+local build = readText("build.txt")
+local stamp = string.match(build, "%S+") -- nil: no build file (tests from src/)
 local done = readText("compiled.txt")
 if stamp and string.match(done, "^%S*") ~= stamp then
   done = stamp .. "\n"
@@ -46,6 +47,14 @@ local function use(name, nocache)
 end
 
 local config = use("config")
+
+-- The first start of a new build compiles the modules listed in build.txt, one per frame, before anything
+-- else is loaded: compiling is the memory peak (a Pocket ran out of it compiling while flying), loading
+-- the .luac later is not
+local pending, np = {}, 0
+for name in string.gmatch(build, "\n(%S+)") do
+  if not string.find(done, "\n" .. name .. "\n", 1, true) then pending[#pending + 1] = name end
+end
 local menus, flight, render
 
 local TITLE, SETTINGS, ARM, FLY, PAUSE, CRASH = 2, 3, 4, 5, 6, 7 -- (1 was the RF warning)
@@ -184,12 +193,28 @@ end
 local function init()
   config.load()
   saveOk = config.save()
-  menuMode()
+  if #pending == 0 then menuMode() end -- else once the modules are compiled (run)
   last = getTime()
   ignoreUntil = last + 40
 end
 
 local function run(event)
+  if np < #pending then
+    np = np + 1
+    local name = pending[np]
+    collectgarbage()
+    local chunk, err = loadScript(DIR .. name .. ".lua", "btc")
+    if not chunk then error(err) end
+    chunk = nil
+    done = done .. name .. "\n"
+    local f = io.open(DIR .. "compiled.txt", "a")
+    if f then io.write(f, name, "\n") io.close(f) end
+    lcd.clear()
+    lcd.drawText(64, 28, "PREPARING " .. np .. "/" .. #pending, CENTER)
+    if np == #pending then menuMode() end
+    last = getTime()
+    return 0
+  end
   local now = getTime()
   frameTicks = frameTicks * 0.9 + (now - last) * 0.1
   acc = acc + now - last

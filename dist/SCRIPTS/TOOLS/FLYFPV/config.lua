@@ -1,7 +1,7 @@
 -- Settings: ranges, defaults, quad types, .cfg persistence. Always loaded (small).
 local M = {}
 
-M.VERSION = "v0.1.0" -- shown on the title screen
+M.VERSION = "v0.1.1" -- shown on the title screen
 M.FILE = "/SCRIPTS/TOOLS/FLYFPV/flyfpv.cfg"
 
 M.MAPS = { "CITY", "METRO", "SPACE", "T_OVAL", "T_TECH", "T_SKY" } -- T_: race tracks
@@ -20,7 +20,8 @@ M.QUADS = {
 -- names = labels by value (index = value - lo + 1); rates in deg/s, expo in hundredths
 M.ITEMS = {
   { key = "MAP", name = "MAP", lo = 1, hi = #M.MAPS, def = 1, names = M.MAPS },
-  { key = "SKY", name = "SKY", lo = 1, hi = 4, def = 1, names = { "AUTO", "DAY", "NIGHT", "OFF" } }, -- AUTO: the map's
+  { key = "SKY", name = "SKY", lo = 1, hi = 4, def = 4, names = { "AUTO", "DAY", "NIGHT", "OFF" } }, -- AUTO: the map's;
+  -- OFF by default: a Pocket ran out of memory with a sky
   { key = "QUAD", name = "QUAD", lo = 1, hi = 5, def = 5 },
   { key = "MODE", name = "MODE", lo = 1, hi = 2, def = 1, names = { "ACRO", "ANGLE" } },
   { key = "CRASH", name = "CRASH", lo = 0, hi = 1, def = 1, names = { "OFF", "ON" } },
