@@ -1,4 +1,4 @@
-# FreeFPV — needs lua5.2 (override: make LUA=/path/to/lua52 LUAC=/path/to/luac52)
+# FlyFPV — needs lua5.2 (override: make LUA=/path/to/lua52 LUAC=/path/to/luac52)
 LUA ?= lua5.2
 LUAC ?= luac5.2
 PY ?= python3
@@ -12,7 +12,7 @@ all: build test
 
 build:
 	$(LUA) tools/build.lua
-	$(LUAC) -p dist/SCRIPTS/TOOLS/freefpv.lua dist/SCRIPTS/TOOLS/FREEFPV/*.lua
+	$(LUAC) -p dist/SCRIPTS/TOOLS/flyfpv.lua dist/SCRIPTS/TOOLS/FLYFPV/*.lua
 
 test: build
 	$(LUA) tests/run_all.lua
@@ -23,11 +23,11 @@ frames: build
 # the built files must never write a global
 lint: build
 	-luacheck src tools tests
-	@! $(LUAC) -l -p dist/SCRIPTS/TOOLS/freefpv.lua dist/SCRIPTS/TOOLS/FREEFPV/*.lua | grep 'SETTABUP.*_ENV' || (echo "global write in dist"; exit 1)
+	@! $(LUAC) -l -p dist/SCRIPTS/TOOLS/flyfpv.lua dist/SCRIPTS/TOOLS/FLYFPV/*.lua | grep 'SETTABUP.*_ENV' || (echo "global write in dist"; exit 1)
 
 # real firmware (Companion simulator DLLs, Windows x64), see tools/simhost/README.md
 sim: build
-	$(PY) tools/simhost/simu_host.py --dll-dir $(SIMU_DLLS) --radio $(RADIO) --sd dist --tool FreeFPV --inputs tools/simhost/inputs/fly.txt --tail 2000 --out out/simu/fly
+	$(PY) tools/simhost/simu_host.py --dll-dir $(SIMU_DLLS) --radio $(RADIO) --sd dist --tool FlyFPV --inputs tools/simhost/inputs/fly.txt --tail 2000 --out out/simu/fly
 
 clean:
 	rm -rf out

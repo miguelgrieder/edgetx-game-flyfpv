@@ -1,10 +1,10 @@
--- TNS|FreeFPV|TNE
--- FreeFPV (generated from src/ by tools/build.lua; edit the sources)
--- FreeFPV entry: module loader, state machine, fixed 50 ms timestep, events, backlight.
--- The game lives in /SCRIPTS/TOOLS/FREEFPV/*.lua, loaded with loadScript (each file compiles and is
+-- TNS|FlyFPV|TNE
+-- FlyFPV (generated from src/ by tools/build.lua; edit the sources)
+-- FlyFPV entry: module loader, state machine, fixed 50 ms timestep, events, backlight.
+-- The game lives in /SCRIPTS/TOOLS/FLYFPV/*.lua, loaded with loadScript (each file compiles and is
 -- cached as .luac on its own). Only one group is in memory at a time: menus, or flight + render +
 -- the selected map's data.
-local DIR = "/SCRIPTS/TOOLS/FREEFPV/"
+local DIR = "/SCRIPTS/TOOLS/FLYFPV/"
 local loaded = {}
 
 -- EdgeTX runs a file's .luac when it is newer than the .lua: with the radio's clock ahead of the PC's,

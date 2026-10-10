@@ -1,4 +1,4 @@
--- Loads FreeFPV (src/ or the built dist/) on top of the EdgeTX mock and steps it frame by frame.
+-- Loads FlyFPV (src/ or the built dist/) on top of the EdgeTX mock and steps it frame by frame.
 local here = (debug.getinfo(1, "S").source:match("^@(.*[/\\])") or "./")
 local mock = dofile(here .. "mock/edgetx.lua")
 
@@ -18,7 +18,7 @@ function H.new(opts)
   local sdroot = mock.sd(opts.sd or "default", not opts.noSaveFolder)
   local dist = (opts.target or "src") == "dist"
   local S = mock.install({ sdroot = sdroot, modelName = opts.modelName or "", clock = opts.clock or 1000,
-    fast = opts.fast, scriptDir = dist and "dist/SCRIPTS/TOOLS/FREEFPV/" or "src/" })
+    fast = opts.fast, scriptDir = dist and "dist/SCRIPTS/TOOLS/FLYFPV/" or "src/" })
   for path, text in pairs(opts.files or {}) do
     local f = assert(S.realio.open(sdroot .. path, "wb"))
     f:write(text)
@@ -49,7 +49,7 @@ function H.new(opts)
     return r
   end
   h.radio = radio
-  h.app = radio(dofile, dist and "dist/SCRIPTS/TOOLS/freefpv.lua" or "src/main.lua")
+  h.app = radio(dofile, dist and "dist/SCRIPTS/TOOLS/flyfpv.lua" or "src/main.lua")
   -- h.flight, h.config, ...: the module as the game's own loader has it (loading it if needed)
   function h.use(name) return radio(h.app.use, name) end
   setmetatable(h, { __index = function(_, k)
@@ -58,7 +58,7 @@ function H.new(opts)
   h.ctx = setmetatable({ h = h }, { __index = function(_, k) return h[k] end })
   -- write a settings file before init (use as opts.setup = H.cfg("MAP=2\n"))
   function h.cfg(text)
-    local f = S.realio.open(S.sdroot .. "/SCRIPTS/TOOLS/FREEFPV/freefpv.cfg", "wb")
+    local f = S.realio.open(S.sdroot .. "/SCRIPTS/TOOLS/FLYFPV/flyfpv.cfg", "wb")
     f:write(text)
     f:close()
   end

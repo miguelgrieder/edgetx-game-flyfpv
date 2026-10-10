@@ -1,8 +1,8 @@
 -- lua5.2 tools/memory.lua: compile allocations per built file and resident Lua heap per phase
 -- (PC numbers: 64-bit, with debug info; the radio uses less, but the ratios hold)
-local files = { "dist/SCRIPTS/TOOLS/freefpv.lua" }
+local files = { "dist/SCRIPTS/TOOLS/flyfpv.lua" }
 for _, n in ipairs({ "config", "menus", "flight", "render", "solid", "world", "wire", "sky", "map_city", "map_metro", "map_space", "map_oval", "map_tech", "map_sky" }) do
-  files[#files + 1] = "dist/SCRIPTS/TOOLS/FREEFPV/" .. n .. ".lua"
+  files[#files + 1] = "dist/SCRIPTS/TOOLS/FLYFPV/" .. n .. ".lua"
 end
 for _, p in ipairs(files) do
   collectgarbage("collect"); collectgarbage("stop")
@@ -15,10 +15,10 @@ for _, p in ipairs(files) do
 end
 collectgarbage("collect")
 local mock = dofile("tools/mock/edgetx.lua")
-local S = mock.install({ sdroot = mock.sd("memory"), clock = 1000, scriptDir = "dist/SCRIPTS/TOOLS/FREEFPV/" })
+local S = mock.install({ sdroot = mock.sd("memory"), clock = 1000, scriptDir = "dist/SCRIPTS/TOOLS/FLYFPV/" })
 local function mem() S.tones, S.haptics, S.modules = {}, {}, {}; collectgarbage("collect"); return collectgarbage("count") end
 local base = mem()
-local app = dofile("dist/SCRIPTS/TOOLS/freefpv.lua")
+local app = dofile("dist/SCRIPTS/TOOLS/flyfpv.lua")
 app.init()
 local peak = 0
 local function run(n, ev, thr)

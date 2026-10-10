@@ -1,7 +1,7 @@
 -- Minimal test runner: T.test(name, fn); T.eq(a, b, msg); T.run() -> failures
-if package.loaded.freefpv_t then return package.loaded.freefpv_t end
+if package.loaded.flyfpv_t then return package.loaded.flyfpv_t end
 local T = { list = {} }
-package.loaded.freefpv_t = T
+package.loaded.flyfpv_t = T
 local here = (debug.getinfo(1, "S").source:match("^@(.*[/\\])") or "./")
 T.H = dofile(here .. "../tools/harness.lua")
 

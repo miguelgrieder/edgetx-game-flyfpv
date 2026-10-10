@@ -1,4 +1,4 @@
-# FreeFPV (v2.3)
+# FlyFPV (v0.1.0)
 
 An FPV **acro trainer** for **EdgeTX radios with a 128×64 black & white screen** (Radiomaster TX12 / TX12 MK2 /
 Boxer / Pocket / GX12 / Zorro, Jumper T-Pro / T-Lite / T20 — the `PCB=X7` family).
@@ -11,31 +11,31 @@ rolls, inverted flight, all of it. A small wireframe world with fixed obstacles;
 
 ## Install
 
-1. Copy `dist/SCRIPTS/TOOLS/freefpv.lua` **and the whole folder** `dist/SCRIPTS/TOOLS/FREEFPV/` to
+1. Copy `dist/SCRIPTS/TOOLS/flyfpv.lua` **and the whole folder** `dist/SCRIPTS/TOOLS/FLYFPV/` to
    `/SCRIPTS/TOOLS/` on the SD card:
 
    ```
    SD card
    └── SCRIPTS/TOOLS/
-       ├── freefpv.lua        <- the launcher shown in TOOLS
-       └── FREEFPV/           <- the game (config, menus, flight, render, solid, 4 maps) + your settings
+       ├── flyfpv.lua        <- the launcher shown in TOOLS
+       └── FLYFPV/           <- the game (config, menus, flight, render, solid, 4 maps) + your settings
    ```
-2. On the radio: **SYS** → **TOOLS** → **FreeFPV**.
+2. On the radio: **SYS** → **TOOLS** → **FlyFPV**.
 
 The radio compiles each file the first time it is used (a `.luac` appears next to it), so the first launch and
 the first flight take a moment. The radio keeps using a `.luac` that is newer than its `.lua`, and a radio
 clock ahead of the PC's makes an old `.luac` look newer than a freshly copied update, so the radio keeps
-running the old version. Since v1.6 the game handles this for its own modules (`FREEFPV/build.txt` holds
+running the old version. Since v1.6 the game handles this for its own modules (`FLYFPV/build.txt` holds
 the build's stamp; each module is recompiled once per new build, logged in `compiled.txt`). Only
-`freefpv.luac` next to `freefpv.lua` is compiled by EdgeTX itself, so when updating **delete
-`SCRIPTS/TOOLS/freefpv.luac`** (and, the first time you install v1.6, every `.luac` in `FREEFPV/`).
+`flyfpv.luac` next to `flyfpv.lua` is compiled by EdgeTX itself, so when updating **delete
+`SCRIPTS/TOOLS/flyfpv.luac`** (and, the first time you install v1.6, every `.luac` in `FLYFPV/`).
 If the radio shows "not enough memory" the first time it compiles, open the game again: files that
 were already compiled load from their `.luac`, which takes much less memory.
 
 ## Safety
 
 The radio **keeps transmitting your sticks to the bound model while you play** (there is no warning screen):
-disarm, better power the model off, before starting FreeFPV.
+disarm, better power the model off, before starting FlyFPV.
 
 ## Controls
 
@@ -99,7 +99,7 @@ see get their edges drawn. Near objects have solid edges, far ones dotted; gates
 right). DEBUG adds the live frame rate (FPS, 20 is the most an EdgeTX script can get) and the Lua memory in KB at the
 bottom left.
 
-## Settings (hold ENT on the title; saved to `/SCRIPTS/TOOLS/FREEFPV/freefpv.cfg`)
+## Settings (hold ENT on the title; saved to `/SCRIPTS/TOOLS/FLYFPV/flyfpv.cfg`)
 
 | setting | range | default |
 |---|---|---|

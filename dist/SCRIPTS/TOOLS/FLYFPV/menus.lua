@@ -43,7 +43,7 @@ end
 
 function M.title()
   local v = config.v
-  center(3, "FREEFPV", DBLSIZE)
+  center(3, "FLYFPV", DBLSIZE)
   lcd.drawText(127, 0, config.VERSION, SMLSIZE + RIGHT)
   center(21, M.saveOk and config.MAPS[v.MAP] .. "  " .. config.QUADS[v.QUAD].name .. "  " .. (v.MODE == 2 and "ANGLE" or "ACRO")
     or "NO SAVE")

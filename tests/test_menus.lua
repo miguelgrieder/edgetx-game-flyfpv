@@ -30,7 +30,7 @@ T.test("settings: edit values, a new quad brings its camera angle, saved on exit
   T.eq(h.menus.label(h.config.item("RP_EXPO")), "0.35")
   h.step(0, 0, -1024, 0, "exit")
   T.eq(h.app.state(), 2)
-  local f = h.S.realio.open(h.S.sdroot .. "/SCRIPTS/TOOLS/FREEFPV/freefpv.cfg", "rb")
+  local f = h.S.realio.open(h.S.sdroot .. "/SCRIPTS/TOOLS/FLYFPV/flyfpv.cfg", "rb")
   local text = f:read("*a")
   f:close()
   T.ok(text:find("QUAD=4"), "saved")
@@ -99,7 +99,7 @@ T.test("pause menu: respawn and quit", function()
 end)
 
 T.test("after an update each module is recompiled once, so an old .luac can't outlive it", function()
-  local B, C = "/SCRIPTS/TOOLS/FREEFPV/build.txt", "/SCRIPTS/TOOLS/FREEFPV/compiled.txt"
+  local B, C = "/SCRIPTS/TOOLS/FLYFPV/build.txt", "/SCRIPTS/TOOLS/FLYFPV/compiled.txt"
   local function modes(h) return table.concat(h.S.loadModes, " ") end
   local function fly(h)
     toTitle(h)

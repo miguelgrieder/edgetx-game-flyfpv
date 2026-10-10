@@ -280,11 +280,11 @@ function M.install(opts)
     getUsage = function() return 0 end,
     killEvents = function(e) S.killed[#S.killed + 1] = e end,
     getStickMode = opts.stickMode and function() return opts.stickMode end or nil,
-    -- loadScript(path, mode): modes are recorded in S.loadModes; "/SCRIPTS/TOOLS/FREEFPV/x.lua" is read from S.scriptDir (src/ or dist/...)
+    -- loadScript(path, mode): modes are recorded in S.loadModes; "/SCRIPTS/TOOLS/FLYFPV/x.lua" is read from S.scriptDir (src/ or dist/...)
     loadScript = function(path, mode)
       S.loadModes[#S.loadModes + 1] = tostring(string.match(path, "([%w_]+)%.lua$")) .. ":" .. tostring(mode)
-      local dir = S.scriptDir or S.sdroot .. "/SCRIPTS/TOOLS/FREEFPV/"
-      local name = string.match(path, "^/SCRIPTS/TOOLS/FREEFPV/([%w_]+)%.lua$")
+      local dir = S.scriptDir or S.sdroot .. "/SCRIPTS/TOOLS/FLYFPV/"
+      local name = string.match(path, "^/SCRIPTS/TOOLS/FLYFPV/([%w_]+)%.lua$")
       if not name then return nil, "loadScript(\"" .. tostring(path) .. "\") error: File not found" end
       local f, err = realLoadfile(dir .. name .. ".lua")
       if not f then return nil, err end
@@ -333,7 +333,7 @@ function M.mkdirp(path)
   end
 end
 
--- fresh virtual SD with the FREEFPV save folder
+-- fresh virtual SD with the FLYFPV save folder
 function M.sd(name, withFolder)
   local root = "out/sd/" .. name
   if package.config:sub(1, 1) == "\\" then
@@ -342,7 +342,7 @@ function M.sd(name, withFolder)
     realos.execute('rm -rf "' .. root .. '"')
   end
   M.mkdirp(root .. "/SCRIPTS/TOOLS")
-  if withFolder ~= false then M.mkdirp(root .. "/SCRIPTS/TOOLS/FREEFPV") end
+  if withFolder ~= false then M.mkdirp(root .. "/SCRIPTS/TOOLS/FLYFPV") end
   return root
 end
 

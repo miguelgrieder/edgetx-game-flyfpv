@@ -14,11 +14,11 @@ NSIS installer. Unpack it with 7-Zip (`7z x companion-windows-*.exe -oinst`) and
 is already on Windows). Available B&W radios include tx12, tx12mk2, boxer, pocket, gx12, zorro, x7...
 
 ## Run
-    python tools/simhost/simu_host.py --dll-dir <inst/bin> --radio tx12 --sd dist --tool FreeFPV \
+    python tools/simhost/simu_host.py --dll-dir <inst/bin> --radio tx12 --sd dist --tool FlyFPV \
         --inputs inputs/run1.txt --out out/simu/run1
 
 * `--sd` is copied to `<out>/_sd` (missing RADIO/MODELS/SETTINGS dirs are created); your folder is never touched.
-* `--tool` is the display name from the script header `-- TNS|FreeFPV|TNE` (file in `SCRIPTS/TOOLS/`).
+* `--tool` is the display name from the script header `-- TNS|FlyFPV|TNE` (file in `SCRIPTS/TOOLS/`).
 * Without `--inputs`, records `--frames` frames (default 100, 50 ms each) with idle sticks.
 * Other options: `--frame-ms`, `--boot-ms` (3500), `--tail` (ms recorded after last input line, 500),
   `--nav "sys,next,enter"` (custom launch key sequence), `--no-launch`, `--stop-keys`.

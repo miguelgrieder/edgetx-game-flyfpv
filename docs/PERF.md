@@ -31,7 +31,7 @@ PC measurements (Lua 5.2 64-bit with debug info; the radio stores compiled files
 
 | file | compile allocations | resident |
 |---|---|---|
-| freefpv.lua (launcher + state machine) | 36.6 KB | 15.8 KB |
+| flyfpv.lua (launcher + state machine) | 36.6 KB | 15.8 KB |
 | config | 18.7 KB | 8.1 KB |
 | menus | 26.0 KB | 10.9 KB |
 | flight | 44.1 KB | 21.4 KB |

@@ -1,8 +1,8 @@
 -- Settings: ranges, defaults, quad types, .cfg persistence. Always loaded (small).
 local M = {}
 
-M.VERSION = "v2.3" -- shown on the title screen
-M.FILE = "/SCRIPTS/TOOLS/FREEFPV/freefpv.cfg"
+M.VERSION = "v0.1.0" -- shown on the title screen
+M.FILE = "/SCRIPTS/TOOLS/FLYFPV/flyfpv.cfg"
 
 M.MAPS = { "CITY", "METRO", "SPACE", "T_OVAL", "T_TECH", "T_SKY" } -- T_: race tracks
 M.MAPFILE = { "map_city", "map_metro", "map_space", "map_oval", "map_tech", "map_sky" }
@@ -69,7 +69,7 @@ function M.load()
   if text then M.parse(text) end
 end
 
--- returns false when the file can't be written (missing FREEFPV/ folder)
+-- returns false when the file can't be written (missing FLYFPV/ folder)
 function M.save()
   local f = io.open(M.FILE, "w")
   if not f then return false end
