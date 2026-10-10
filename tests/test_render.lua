@@ -25,14 +25,28 @@ T.test("uptilt puts the horizon low on the ground; rolling tilts it", function()
   local h, f, r = setup({ CAMERA = 35 })
   lcd.clear()
   r.draw(-1024)
-  -- horizon at y = 32 + 40 * tan(35) ~ 60
-  local row = 0
-  for y = 50, 63 do
+  -- real horizon at y = 32 + 40 * tan(35) ~ 60, inside the 6 px edge margin: pinned dotted at row 57
+  -- (sitting on the ground the grid also lies on rows 58-63, so check the pinned row itself)
+  local n = 0
+  for x = 0, 127 do n = n + h.fb():get(x, 63 - r.EDGE) end
+  T.ok(n > 50, "pinned dotted horizon on row " .. (63 - r.EDGE) .. ": " .. n .. " px")
+  local row
+  -- nose down: the real horizon comes into view, solid, at its true row
+  f.pz, f.ground = 5, false
+  local a = 25 * math.pi / 180 -- pitch 25 deg down: horizon at 32 + 40 * tan(10) ~ 39
+  f.fx, f.fz, f.uy, f.uz = math.cos(a), -math.sin(a), math.sin(a), math.cos(a)
+  f.fy, f.ux = 0, 0
+  f.fx, f.fy = 0, math.cos(a)
+  f.uy = math.sin(a)
+  lcd.clear()
+  r.draw(-1024)
+  row = 0
+  for y = 30, 50 do
     local n = 0
     for x = 0, 127 do n = n + h.fb():get(x, y) end
     if n > 100 then row = y end
   end
-  T.ok(row >= 58 and row <= 61, "horizon row " .. row)
+  T.ok(row >= 38 and row <= 40, "true horizon row " .. row)
 end)
 
 T.test("nothing is ever drawn off-screen: 3000 random poses inside and around the obstacles", function()
