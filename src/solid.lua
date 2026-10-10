@@ -44,9 +44,34 @@ return function(tr, seg2, seg3, NEAR, CX, CY, F, drawLine)
       if s1 > yhi then yhi = s1 end
       local k = (xb - xa) / (yb - ya)
       local x = xa + (s0 - ya) * k
-      for y = s0, s1 do
-        span(y, x)
-        x = x + k
+      -- a band (2 rows) at a time: it takes the smaller and the larger of its rows' x (this runs for
+      -- every row of every face cut by the near plane: one call per row was a quarter of a close frame)
+      local y = s0
+      if y % 2 > 0.5 then -- an odd first row is alone in its band
+        local b = (y - 1) / 2
+        if x < RL[b] then RL[b] = x end
+        if x > RR[b] then RR[b] = x end
+        y, x = y + 1, x + k
+      end
+      local b = y / 2
+      if k < 0 then
+        while y < s1 do
+          local x2 = x + k
+          if x2 < RL[b] then RL[b] = x2 end
+          if x > RR[b] then RR[b] = x end
+          x, y, b = x2 + k, y + 2, b + 1
+        end
+      else
+        while y < s1 do
+          local x2 = x + k
+          if x < RL[b] then RL[b] = x end
+          if x2 > RR[b] then RR[b] = x2 end
+          x, y, b = x2 + k, y + 2, b + 1
+        end
+      end
+      if y <= s1 then -- a last row alone
+        if x < RL[b] then RL[b] = x end
+        if x > RR[b] then RR[b] = x end
       end
     end
     -- the end rows (horizontal edges, rounding)
