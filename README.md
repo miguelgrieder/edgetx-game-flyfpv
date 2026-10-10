@@ -151,3 +151,15 @@ New golden after an intended visual change: `APPROVE=1 lua5.2 tests/run_all.lua 
 | TX12, Boxer, Pocket | (same target) | ✓ fly scenario, no errors | not yet |
 
 MIT license.
+
+## Games used as examples
+
+Studied while building this game (structure, EdgeTX Lua API usage on B&W screens); no code was copied:
+
+- [lua-fpv-sim](https://github.com/alexeystn/lua-fpv-sim) by Alexey Stankevich: FPV simulator for EdgeTX/OpenTX radios
+- [galuaxian](https://github.com/timmalahov/galuaxian) by timmalahov: Galaxian-style shooter
+- [OpenTX-Pong](https://github.com/SpechtD/OpenTX-Pong) by David Specht: Pong with two sticks
+- [EdgeTX SD card scripts](https://github.com/EdgeTX/edgetx-sdcard): the official
+  [snake](https://github.com/EdgeTX/edgetx-sdcard/blob/master/sdcard/bw128x64/SCRIPTS/snake.lua) and the TOOLS header of Model Locator
+- RCSIM Pocket games (Doom, RC Racer, Pong, Snake, PocketPet, Lap Timer; MIT): no public link known
+- [EdgeTX firmware](https://github.com/EdgeTX/edgetx): the Lua API source, the ground truth for what B&W radios can draw
