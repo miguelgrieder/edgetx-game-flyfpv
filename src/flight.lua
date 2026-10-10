@@ -101,27 +101,32 @@ function M.spawn()
   M.px, M.py, M.pz = M.sx, M.sy, 0
   M.vx, M.vy, M.vz = 0, 0, 0
   M.wr, M.wp, M.wy = 0, 0, 0
+  M.cr, M.cp, M.cy, M.drag = 0, 0, 0, M.lin
   level(M.sh * RAD)
   M.ground, M.crashed, M.t = true, false, 0
 end
 
--- re-square the attitude: normalise f, make r orthogonal to f, u = r x f
+-- re-square the attitude: normalise f, make r orthogonal to f, u = r x f. The vectors are always
+-- almost unit, so 1/length = (3 - length^2) / 2 is exact enough and needs no sqrt (slow on the radio)
 local function orthonormalize()
   local fx, fy, fz = M.fx, M.fy, M.fz
-  local l = sqrt(fx * fx + fy * fy + fz * fz)
-  fx, fy, fz = fx / l, fy / l, fz / l
+  local s = (3 - (fx * fx + fy * fy + fz * fz)) / 2
+  fx, fy, fz = fx * s, fy * s, fz * s
   local rx, ry, rz = M.rx, M.ry, M.rz
   local d = rx * fx + ry * fy + rz * fz
   rx, ry, rz = rx - d * fx, ry - d * fy, rz - d * fz
-  l = sqrt(rx * rx + ry * ry + rz * rz)
-  rx, ry, rz = rx / l, ry / l, rz / l
+  s = (3 - (rx * rx + ry * ry + rz * rz)) / 2
+  rx, ry, rz = rx * s, ry * s, rz * s
   M.fx, M.fy, M.fz, M.rx, M.ry, M.rz = fx, fy, fz, rx, ry, rz
   M.ux, M.uy, M.uz = ry * fz - rz * fy, rz * fx - rx * fz, rx * fy - ry * fx
 end
 
 -- rotate the body by small angles: roll a (right wing down), pitch b (nose down), yaw c (nose right)
 local function rotate(a, b, c)
-  local ca, sa, cb, sb, cc, sc = cos(a), sin(a), cos(b), sin(b), cos(c), sin(c)
+  -- angles per substep are small (< 0.1 rad): series instead of 6 sin/cos calls (no double FPU on the radio)
+  local a2, b2, c2 = a * a, b * b, c * c
+  local ca, sa, cb, sb = 1 - a2 / 2, a - a * a2 / 6, 1 - b2 / 2, b - b * b2 / 6
+  local cc, sc = 1 - c2 / 2, c - c * c2 / 6
   local fx, fy, fz, rx, ry, rz, ux, uy, uz = M.fx, M.fy, M.fz, M.rx, M.ry, M.rz, M.ux, M.uy, M.uz
   -- roll about f
   ux, uy, uz, rx, ry, rz = ux * ca + rx * sa, uy * ca + ry * sa, uz * ca + rz * sa,
@@ -191,20 +196,7 @@ function M.step(ail, ele, thr, rud)
     M.ground = false
   end
   -- commanded body rates (deg/s)
-  local cr, cp
-  if M.angle then
-    local roll = atan2(-M.rz, M.uz) / RAD
-    local fz = M.fz > 1 and 1 or (M.fz < -1 and -1 or M.fz)
-    local pitch = asin(-fz) / RAD
-    cr = (ail * M.ANGLE_MAX - roll) * M.ANGLE_GAIN
-    cp = (ele * M.ANGLE_MAX - pitch) * M.ANGLE_GAIN
-    if cr > M.rpM then cr = M.rpM elseif cr < -M.rpM then cr = -M.rpM end
-    if cp > M.rpM then cp = M.rpM elseif cp < -M.rpM then cp = -M.rpM end
-  else
-    cr = M.rate(ail, M.rpC, M.rpM, M.rpE)
-    cp = M.rate(ele, M.rpC, M.rpM, M.rpE)
-  end
-  local cy = M.rate(rud, M.yC, M.yM, M.yE)
+  local cr, cp, cy = M.cr, M.cp, M.cy -- commanded rates, worked out once per frame in M.tick
   -- motors and inertia: the real rate follows the command with a lag
   local k = M.lagK
   M.wr = M.wr + (cr * RAD - M.wr) * k
@@ -213,7 +205,7 @@ function M.step(ail, ele, thr, rud)
   rotate(M.wr * dtr, M.wp * dtr, M.wy * dtr)
   -- thrust along u, gravity, drag (linear + quadratic)
   local vx, vy, vz = M.vx, M.vy, M.vz
-  local drag = M.kq * sqrt(vx * vx + vy * vy + vz * vz) + M.lin
+  local drag = M.drag -- set once per frame from the speed (saves a sqrt per substep)
   vx = vx + (M.ux * T - drag * vx) * dt
   vy = vy + (M.uy * T - drag * vy) * dt
   vz = vz + (M.uz * T - G - drag * vz) * dt
@@ -245,8 +237,24 @@ function M.tick(ail, ele, thr, rud)
   local a, e, y = ail / 1024, ele / 1024, rud / 1024
   local t = (thr + 1024) / 2048
   if t < 0 then t = 0 elseif t > 1 then t = 1 end
+  -- once per frame: commanded body rates (deg/s) and the drag factor
+  if M.angle then
+    local roll = atan2(-M.rz, M.uz) / RAD
+    local fz = M.fz > 1 and 1 or (M.fz < -1 and -1 or M.fz)
+    local pitch = asin(-fz) / RAD
+    local cr = (a * M.ANGLE_MAX - roll) * M.ANGLE_GAIN
+    local cp = (e * M.ANGLE_MAX - pitch) * M.ANGLE_GAIN
+    if cr > M.rpM then cr = M.rpM elseif cr < -M.rpM then cr = -M.rpM end
+    if cp > M.rpM then cp = M.rpM elseif cp < -M.rpM then cp = -M.rpM end
+    M.cr, M.cp = cr, cp
+  else
+    M.cr, M.cp = M.rate(a, M.rpC, M.rpM, M.rpE), M.rate(e, M.rpC, M.rpM, M.rpE)
+  end
+  M.cy = M.rate(y, M.yC, M.yM, M.yE)
+  local speed = M.speed()
+  M.drag = M.kq * speed + M.lin
   -- broad phase: only boxes within this frame's reach are tested in the substeps
-  local reach = M.speed() * M.DT * M.SUB + M.radius + 1
+  local reach = speed * M.DT * M.SUB + M.radius + 1
   local px, py, pz = M.px, M.py, M.pz
   local X1, Y1, Z1, X2, Y2, Z2 = W.x1, W.y1, W.z1, W.x2, W.y2, W.z2
   nnear = 0

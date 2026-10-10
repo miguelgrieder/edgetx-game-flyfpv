@@ -42,7 +42,7 @@ T.test("nothing is ever drawn off-screen: 3000 random poses inside and around th
   for _ = 1, 3000 do
     f.px, f.py, f.pz = rnd(-15, 15), rnd(-5, 40), rnd(0, 10)
     -- random attitude: random small rotations applied many times
-    for _ = 1, 3 do f.step(rnd(-1, 1), rnd(-1, 1), 0.3, rnd(-1, 1)) end
+    for _ = 1, 3 do f.tick(rnd(-1024, 1024), rnd(-1024, 1024), -400, rnd(-1024, 1024)) end
     f.ground = false
     lcd.clear()
     local n = r.draw(0)

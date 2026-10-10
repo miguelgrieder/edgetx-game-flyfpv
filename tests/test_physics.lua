@@ -142,7 +142,7 @@ T.test("SIM SPEED 2.0x: movement in 1 s equals 2 s at 1.0x; rotation stays real 
   f2.pz, f2.ground = 100, false
   for _ = 1, 40 do f1.tick(0, 0, -1024, 0) end -- 2 s at 1x
   for _ = 1, 20 do f2.tick(0, 0, -1024, 0) end -- 1 s at 2x
-  T.near(f1.pz, f2.pz, 1e-6)
+  T.near(f1.pz, f2.pz, 0.1) -- drag is updated once per frame, so not bit-exact
   T.ok(f2.pz < 90, "fell")
   -- rotation: one full-stick roll second turns the same angle at any SIM SPEED
   f2 = setup({ SIM_SPEED = 20 })
