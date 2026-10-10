@@ -112,25 +112,28 @@ local function line(x1, y1, z1, x2, y2, z2, pat)
 end
 
 -- horizon: screen points whose ray is level ((sx-CX)*rz + (CY-sy)*uz + F*fz = 0)
--- When it is out of view (nose up with a high camera angle, looking at the sky...) it is pinned, dotted,
--- to the nearest screen edge with the same tilt, so the roll is always visible. Drawn before the objects,
--- so buildings still hide it.
+-- When it is out of view or only in the outer rows/columns (nose up with a high camera angle; some
+-- radios' bezels hide the screen's edge rows) it is pinned, dotted, a few pixels inside the screen with
+-- the same tilt, so the roll is always visible. Drawn before the objects, so buildings still hide it.
+M.EDGE = 6 -- pixels at each screen edge treated as "not reliably visible"
 local function horizon()
   if rz * rz > uz * uz then
     -- steep line: x as a function of y
     local xa, xb = CX - ((CY + 1) * uz + F * fz) / rz, CX - ((CY - 64) * uz + F * fz) / rz
-    if (xa < 0 and xb < 0) or (xa > 127 and xb > 127) then
+    local e = M.EDGE
+    if (xa < e and xb < e) or (xa > 127 - e and xb > 127 - e) then
       local d = (xa + xb) / 2
-      d = (d > 127 and 125 or 2) - d
+      d = (d > 63 and 127 - e or e) - d
       seg2(xa + d, -1, xb + d, 64, DOTTED)
     else
       seg2(xa, -1, xb, 64, SOLID)
     end
   elseif uz ~= 0 then
     local ya, yb = CY + ((-1 - CX) * rz + F * fz) / uz, CY + ((128 - CX) * rz + F * fz) / uz
-    if (ya < 0 and yb < 0) or (ya > 63 and yb > 63) then
+    local e = M.EDGE
+    if (ya < e and yb < e) or (ya > 63 - e and yb > 63 - e) then
       local d = (ya + yb) / 2
-      d = (d > 63 and 61 or 2) - d
+      d = (d > 31 and 63 - e or e) - d
       seg2(-1, ya + d, 128, yb + d, DOTTED)
     else
       seg2(-1, ya, 128, yb, SOLID)
