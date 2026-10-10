@@ -50,8 +50,10 @@ return function(tr, seg3, VX, VY, VZ, CX, CY, F, basis, R)
   end
 
   -- stars (maps with a sky): fixed directions, so they turn with the camera but never get closer
+  -- returns the topmost row drawn on (64: none)
   function S.stars()
     local W = flight.W
+    local top = 64
     local rx, ry, rz, ux, uy, uz, fx, fy, fz = basis()
     local SX, SY, SZ = W.sx, W.sy, W.sz
     for k = 1, W.ns do
@@ -63,10 +65,11 @@ return function(tr, seg3, VX, VY, VZ, CX, CY, F, basis, R)
         if x >= 0 and x < 128 and y >= 0 and y < 64 then
           x, y = x - x % 1, y - y % 1
           lcd.drawPoint(x, y, FORCE)
-          if y < R.top then R.top = y end
+          if y < top then top = y end
         end
       end
     end
+    return top
   end
 
   return S

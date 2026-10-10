@@ -89,11 +89,13 @@ T.test("floating boxes and poles, tunnels, chimneys, roofs and stars build their
   T.eq(W.nb, 1 + 1 + 3 * 4 + 4 + 4) T.eq(W.nt, 3) T.eq(W.ns, 20)
   T.eq(W.z1[1], 5) T.eq(W.z2[1], 7) T.eq(W.kind[1], 1)
   T.eq(W.z1[2], 2) T.eq(W.z2[2], 6) T.eq(W.kind[2], 2)
-  -- chimney walls stand from 0 to 8
-  T.eq(W.z1[11], 0) T.eq(W.z2[11], 8) T.eq(W.kind[11], 0)
-  -- roof slabs at 6..6.3, then 4 poles from the ground to the roof at its corners
-  T.eq(W.z1[15], 6) T.near(W.z2[15], 6.3) T.eq(W.kind[19], 2) T.eq(W.z2[19], 6)
-  T.near((W.x1[19] + W.x2[19]) / 2, -4) T.near((W.y1[19] + W.y2[19]) / 2, -16)
+  -- drawn boxes first (render walks only those): roof slabs at 6..6.3, then its 4 poles from the ground to
+  -- the roof at its corners
+  T.eq(W.nv, 10)
+  T.eq(W.z1[3], 6) T.near(W.z2[3], 6.3) T.eq(W.kind[7], 2) T.eq(W.z2[7], 6)
+  T.near(W.mx[7], -4) T.near(W.my[7], -16)
+  -- then the hidden tunnel walls; the chimney's (third tunnel) stand from 0 to 8
+  T.eq(W.kind[11], 0) T.eq(W.z1[19], 0) T.eq(W.z2[19], 8) T.eq(W.kind[19], 0)
   for k = 1, 20 do
     local x, y, z = W.sx[k], W.sy[k], W.sz[k]
     T.near(x * x + y * y + z * z, 1, 1e-9)

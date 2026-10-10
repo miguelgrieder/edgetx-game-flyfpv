@@ -8,11 +8,20 @@
 local sqrt, sin, cos = math.sqrt, math.sin, math.cos
 local W
 
+-- hidden boxes (gate bars, tunnel walls) wait in H and go after the drawn ones, so render only walks
+-- the first W.nv boxes
+local H, nh = {}, 0
 local function box(x1, y1, z1, x2, y2, z2, kind)
+  if kind == 0 then -- int
+    H[nh + 1], H[nh + 2], H[nh + 3], H[nh + 4], H[nh + 5], H[nh + 6] = x1, y1, z1, x2, y2, z2
+    nh = nh + 6
+    return
+  end
   local n = W.nb + 1
   W.nb = n
   W.x1[n], W.y1[n], W.z1[n], W.x2[n], W.y2[n], W.z2[n], W.kind[n] = x1, y1, z1, x2, y2, z2, kind
-  -- bounding sphere radius, for render's view test (worked out once here: sqrt is slow on the radio)
+  -- centre and bounding sphere radius, for render's view test (worked out once here)
+  W.mx[n], W.my[n], W.mz[n] = (x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2
   W.rad[n] = sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1)) / 2
 end
 
@@ -57,7 +66,7 @@ end
 
 return function(M, map)
   W = M.W
-  W.nb, W.ng, W.nt, W.ns = 0, 0, 0, 0
+  W.nb, W.ng, W.nt, W.ns, nh = 0, 0, 0, 0, 0
   local b = map.box or {}
   for i = 1, #b, 5 do
     local x, y, w, d, h = b[i], b[i + 1], b[i + 2] / 2, b[i + 3] / 2, b[i + 4]
@@ -103,6 +112,12 @@ return function(M, map)
     local ex, ey = ax * (hw + 2 * t) + bx * t, ay * (hw + 2 * t) + by * t
     box(x - ex, y - ey, z2, x + ex, y + ey, z2 + 2 * t, 0)
     box(x - ex, y - ey, z1 - 2 * t, x + ex, y + ey, z1, 0)
+  end
+  W.nv = W.nb
+  for k = 1, nh, 6 do
+    local n = W.nb + 1
+    W.nb = n
+    W.x1[n], W.y1[n], W.z1[n], W.x2[n], W.y2[n], W.z2[n], W.kind[n] = H[k], H[k + 1], H[k + 2], H[k + 3], H[k + 4], H[k + 5], 0
   end
   M.grid = map.grid or 10
   M.far = map.far

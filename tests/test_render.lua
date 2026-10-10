@@ -88,12 +88,14 @@ T.test("no allocation while drawing (mock in no-raster mode: its own rasteriser 
   r.draw(0)
   collectgarbage("collect")
   collectgarbage("stop")
+  -- right after a full collection the first frame regrows what it shrank (a few KB, once): measure from
+  -- frame 10 on; anything per frame would grow 3000x
+  for _ = 1, 10 do r.draw(0) end
   local a = collectgarbage("count")
   for _ = 1, 3000 do r.draw(0) end
   local used = collectgarbage("count") - a
   collectgarbage("restart")
-  -- a one-off ~1 KB (interpreter stack) is fine; anything per frame would be 3000x
-  T.ok(used < 2, "allocated " .. used .. " KB in 3000 frames")
+  T.ok(used < 0.5, "allocated " .. used .. " KB in 3000 frames")
 end)
 
 -- EdgeTX 2.12.2's Lua floors a float before == / ~= against an integer (0.87 ~= 0 is false; fixed in

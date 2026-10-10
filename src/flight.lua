@@ -19,7 +19,7 @@ M.ANGLE_GAIN = 6 -- angle mode: deg/s of correction per deg of error
 
 -- world: collision boxes (kind 1 box, 2 pole, 0 hidden gate bar / tunnel wall), gates, wire tunnels
 -- and the stars of the sky (unit directions)
-local W = { x1 = {}, y1 = {}, z1 = {}, x2 = {}, y2 = {}, z2 = {}, kind = {}, rad = {}, nb = 0, gx = {}, gy = {}, ga = {}, ng = 0,
+local W = { x1 = {}, y1 = {}, z1 = {}, x2 = {}, y2 = {}, z2 = {}, kind = {}, rad = {}, mx = {}, my = {}, mz = {}, nb = 0, nv = 0, gx = {}, gy = {}, ga = {}, ng = 0,
   tx = {}, ty = {}, tz = {}, ta = {}, tl = {}, ts = {}, nt = 0, sx = {}, sy = {}, sz = {}, ns = 0 }
 local NEARB, nnear = {}, 0 -- boxes close enough to touch during this frame
 M.W = W

@@ -132,17 +132,25 @@ return function(tr, seg2, seg3, NEAR, CX, CY, F, drawLine)
     end
   end
 
-  -- project box i (camera at cpx, cpy, cpz) and build its outline spans
-  function S.outline(i, cpx, cpy, cpz)
+  -- the camera for this frame: position and basis (right, up, forward)
+  local cpx, cpy, cpz, rx, ry, rz, ux, uy, uz, fx, fy, fz = 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0
+  function S.camera(a, b, c, d, e, f, g, h, i, j, k, l)
+    cpx, cpy, cpz, rx, ry, rz, ux, uy, uz, fx, fy, fz = a, b, c, d, e, f, g, h, i, j, k, l
+  end
+
+  -- project box i and build its outline spans
+  function S.outline(i)
     local W = flight.W
     local x1, y1, z1, x2, y2, z2 = W.x1[i], W.y1[i], W.z1[i], W.x2[i], W.y2[i], W.z2[i]
-    -- 4 transforms; the other corners by adding the box's edge vectors (the transform is linear)
+    -- one corner transformed; the others by adding the box's edges, which in camera space are the
+    -- camera's axes scaled by the box's size (the transform is linear)
     local ax, ay, az = tr(x1, y1, z1)
-    local bx, by, bz = tr(x2, y1, z1)
-    local dx, dy, dz = tr(x1, y2, z1)
-    local ex, ey, ez = tr(x1, y1, z2)
-    local yx, yy, yz = dx - ax, dy - ay, dz - az -- world y edge
-    local zx, zy, zz = ex - ax, ey - ay, ez - az -- world z edge
+    local w, d, h = x2 - x1, y2 - y1, z2 - z1
+    local bx, by, bz = ax + w * rx, ay + w * ux, az + w * fx
+    local dx, dy, dz = ax + d * ry, ay + d * uy, az + d * fy
+    local ex, ey, ez = ax + h * rz, ay + h * uz, az + h * fz
+    local yx, yy, yz = d * ry, d * uy, d * fy -- world y edge
+    local zx, zy, zz = h * rz, h * uz, h * fz -- world z edge
     VX[1], VY[1], VZ[1] = ax, ay, az
     VX[2], VY[2], VZ[2] = bx, by, bz
     VX[3], VY[3], VZ[3] = bx + yx, by + yy, bz + yz

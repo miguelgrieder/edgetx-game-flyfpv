@@ -21,8 +21,8 @@ local CX, CY, F, NEAR = 64, 32, M.F, M.NEAR
 local px, py, pz, rx, ry, rz, ux, uy, uz, fx, fy, fz = 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0
 local lines, rows = 0, 0
 -- topmost screen row drawn on so far this frame: everything above it is still blank, so solid boxes
--- don't need to erase there
-M.top = 64
+-- don't need to erase there (a local: it is checked for every line)
+local top = 64
 
 function M.camera()
   local t = flight.cam
@@ -67,8 +67,8 @@ local function seg2(x1, y1, x2, y2, pat)
     b, d = b - b % 1, d - d % 1
     drawLine(a - a % 1, b, c - c % 1, d, pat, FORCE)
     lines = lines + 1
-    if b < M.top then M.top = b end
-    if d < M.top then M.top = d end
+    if b < top then top = b end
+    if d < top then top = d end
     return
   end
   local dx, dy = x2 - x1, y2 - y1
@@ -88,8 +88,8 @@ local function seg2(x1, y1, x2, y2, pat)
     ya, yb = ya - ya % 1, yb - yb % 1
     drawLine(xa - xa % 1, ya, xb - xb % 1, yb, pat, FORCE)
     lines = lines + 1
-    if ya < M.top then M.top = ya end
-    if yb < M.top then M.top = yb end
+    if ya < top then top = ya end
+    if yb < top then top = yb end
   end
 end
 M.seg2 = seg2
@@ -108,11 +108,11 @@ local function seg3(xa, ya, za, xb, yb, zb, pat)
 end
 M.seg3 = seg3
 
--- world-space segment
-local function line(x1, y1, z1, x2, y2, z2, pat)
-  local ax, ay, az = tr(x1, y1, z1)
-  local bx, by, bz = tr(x2, y2, z2)
-  seg3(ax, ay, az, bx, by, bz, pat)
+-- vertical world segment (a pole) from z1 to z2: one transform, the top is the bottom + height along up
+local function vline(x, y, z1, z2, pat)
+  local ax, ay, az = tr(x, y, z1)
+  local h = z2 - z1
+  seg3(ax, ay, az, ax + h * rz, ay + h * uz, az + h * fz, pat)
 end
 
 -- horizon: screen points whose ray is level ((sx-CX)*rz + (CY-sy)*uz + F*fz = 0), drawn slightly curved
@@ -154,19 +154,32 @@ local function grid()
   -- low down, far lines squeeze into a band at the horizon: keep lines within ~15x the height
   local far = pz * 15
   if far < 2 * S then far = 2 * S end
-  for k = -N, N do
-    local x, y = gx + k * S, gy + k * S
-    if (x - px) * (x - px) < far * far then line(x, gy - L, 0, x, gy + L, 0, DOTTED) end
-    if (y - py) * (y - py) < far * far then line(gx - L, y, 0, gx + L, y, 0, DOTTED) end
+  -- the south-west corner in camera space, one cell east (e) and north (n), a whole line (2N cells)
+  local ox, oy, oz = tr(gx - L, gy - L, 0)
+  local ex, ey, ez, nx, ny, nz = S * rx, S * ux, S * fx, S * ry, S * uy, S * fy
+  local m = 2 * N
+  local lx, ly, lz, kx, ky, kz = m * nx, m * ny, m * nz, m * ex, m * ey, m * ez
+  for k = 0, m do
+    local d = (k - N) * S
+    local x, y = gx + d - px, gy + d - py
+    if x * x < far * far then
+      local ax, ay, az = ox + k * ex, oy + k * ey, oz + k * ez
+      seg3(ax, ay, az, ax + lx, ay + ly, az + lz, DOTTED)
+    end
+    if y * y < far * far then
+      local ax, ay, az = ox + k * nx, oy + k * ny, oz + k * nz
+      seg3(ax, ay, az, ax + kx, ay + ky, az + kz, DOTTED)
+    end
   end
 end
 
--- is a sphere (camera coordinates) worth drawing?
+-- is a sphere (camera coordinates) worth drawing? (objects() has the same test inline for boxes)
+local KX, KY = CX / F, CY / F
 local function visible(x, y, z, r)
   local far = M.FAR + r
   if z + r < NEAR or x * x + y * y + z * z > far * far then return false end
   local zz = z > NEAR and z or NEAR
-  return (x < 0 and -x or x) - r < zz * CX / F and (y < 0 and -y or y) - r < zz * CY / F
+  return (x < 0 and -x or x) - r < zz * KX and (y < 0 and -y or y) - r < zz * KY
 end
 
 -- solid boxes live in their own file (keeps each file small enough to compile on the radio)
@@ -207,13 +220,21 @@ local function objects()
   local W = flight.W
   local X1, Y1, Z1, X2, Y2, Z2, K = W.x1, W.y1, W.z1, W.x2, W.y2, W.z2, W.kind
   local n = 0
-  for i = 1, W.nb do
-    if K[i] > 0 then
-      local mx, my, mz = (X1[i] + X2[i]) / 2, (Y1[i] + Y2[i]) / 2, (Z1[i] + Z2[i]) / 2
-      local cx, cy, cz = tr(mx, my, mz)
-      if visible(cx, cy, cz, W.rad[i]) then
-        n = n + 1
-        ORD[n], DST[n] = i, cx * cx + cy * cy + cz * cz
+  -- the boxes that are drawn come first in W (nv of them); the view test inline, it runs for every one
+  local MX, MY, MZ, RAD, FAR = W.mx, W.my, W.mz, W.rad, M.FAR
+  local crx, cry, crz, cux, cuy, cuz, cfx, cfy, cfz, cpx, cpy, cpz = rx, ry, rz, ux, uy, uz, fx, fy, fz, px, py, pz
+  for i = 1, W.nv do
+    local dx, dy, dz, r = MX[i] - cpx, MY[i] - cpy, MZ[i] - cpz, RAD[i]
+    local cz = dx * cfx + dy * cfy + dz * cfz
+    if cz + r > NEAR then
+      local cx, cy = dx * crx + dy * cry + dz * crz, dx * cux + dy * cuy + dz * cuz
+      local d, far = cx * cx + cy * cy + cz * cz, FAR + r
+      if d < far * far then
+        local zz = cz > NEAR and cz or NEAR
+        if (cx < 0 and -cx or cx) - r < zz * KX and (cy < 0 and -cy or cy) - r < zz * KY then
+          n = n + 1
+          ORD[n], DST[n] = i, d
+        end
       end
     end
   end
@@ -257,10 +278,10 @@ local function objects()
       wire.tube(-i - W.ng, DST[k] > d * d and DOTTED or SOLID)
     elseif i < 0 then gate(-i, pat)
     elseif K[i] == 2 then -- int
-      line((X1[i] + X2[i]) / 2, (Y1[i] + Y2[i]) / 2, Z1[i], (X1[i] + X2[i]) / 2, (Y1[i] + Y2[i]) / 2, Z2[i], pat) -- pole
+      vline(MX[i], MY[i], Z1[i], Z2[i], pat) -- pole
     else
-      solid.outline(i, px, py, pz)
-      rows = rows + solid.erase(M.top)
+      solid.outline(i)
+      rows = rows + solid.erase(top)
       solid.edges(pat)
     end
   end
@@ -290,11 +311,15 @@ end
 
 -- the whole view; returns the number of lcd calls of the 3D part (lines + fill rows)
 function M.draw(thr)
-  lines, rows, M.top = 0, 0, 64
+  lines, rows, top = 0, 0, 64
   M.camera()
+  solid.camera(px, py, pz, rx, ry, rz, ux, uy, uz, fx, fy, fz)
   local W = flight.W
   if not wire and (W.nt > 0 or W.ns > 0) then wire = use("wire")(tr, seg3, VX, VY, VZ, CX, CY, F, basis, M) end
-  if wire then wire.stars() end
+  if wire then
+    local t = wire.stars()
+    if t < top then top = t end
+  end
   horizon()
   grid()
   objects()
