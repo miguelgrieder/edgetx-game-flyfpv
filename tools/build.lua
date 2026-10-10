@@ -1,7 +1,7 @@
 -- Builds the SD card image in dist/: src/main.lua becomes SCRIPTS/TOOLS/freefpv.lua (with the TOOLS
 -- header) and every other module goes to SCRIPTS/TOOLS/FREEFPV/<name>.lua, loaded with loadScript.
 -- Each file compiles on its own on the radio (one big file runs out of memory while compiling).
-local MODULES = { "config", "menus", "flight", "render", "solid", "world", "wire", "map_city",
+local MODULES = { "config", "menus", "flight", "render", "solid", "world", "wire", "sky", "map_city",
   "map_metro", "map_space", "map_oval", "map_tech", "map_sky" }
 local OUT = "dist/SCRIPTS/TOOLS/"
 

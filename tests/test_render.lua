@@ -102,7 +102,7 @@ end)
 -- 2.12.4) and the PC's Lua 5.2 can't show it, so the geometry modules may compare with a number
 -- literal only where both sides are integers, marked "int" in a comment
 T.test("geometry never compares a float with == / ~= against a number (EdgeTX 2.12.2 Lua bug)", function()
-  for _, name in ipairs({ "render", "solid", "flight", "world", "wire" }) do
+  for _, name in ipairs({ "render", "solid", "flight", "world", "wire", "sky" }) do
     local n = 0
     for line in (T.read("src/" .. name .. ".lua"):gsub("\r", "") .. "\n"):gmatch("(.-)\n") do
       n = n + 1

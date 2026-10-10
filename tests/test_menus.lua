@@ -17,6 +17,7 @@ T.test("settings: edit values, a new quad brings its camera angle, saved on exit
   local h = T.H.new({ sd = "t_menus" })
   toSettings(h)
   T.eq(h.menus.editing, false)
+  h.step(0, 0, -1024, 0, "next") -- SKY
   h.step(0, 0, -1024, 0, "next") -- QUAD
   h.step(0, 0, -1024, 0, "enter")
   h.step(0, 0, -1024, 0, "prev") -- 5IN -> 3.5IN
@@ -107,15 +108,15 @@ T.test("after an update each module is recompiled once, so an old .luac can't ou
   end
   local h = T.H.new({ sd = "t_stamp", files = { [B] = "v9-1\n" } })
   fly(h)
-  T.eq(modes(h), "config:btc menus:btc flight:btc map_city:btc world:btc render:btc solid:btc wire:btc")
+  T.eq(modes(h), "config:btc menus:btc flight:btc map_city:btc world:btc render:btc solid:btc wire:btc sky:btc")
   local f = h.S.realio.open(h.S.sdroot .. C, "rb")
   local done = f:read("*a")
   f:close()
-  T.eq(done, "v9-1\nconfig\nmenus\nflight\nmap_city\nworld\nrender\nsolid\nwire\n")
+  T.eq(done, "v9-1\nconfig\nmenus\nflight\nmap_city\nworld\nrender\nsolid\nwire\nsky\n")
   -- next start, same build: the .luac files are used
   local h2 = T.H.new({ sd = "t_stamp2", files = { [B] = "v9-1\n", [C] = done } })
   fly(h2)
-  T.eq(modes(h2), "config:bt menus:bt flight:bt map_city:bt world:bt render:bt solid:bt wire:bt")
+  T.eq(modes(h2), "config:bt menus:bt flight:bt map_city:bt world:bt render:bt solid:bt wire:bt sky:bt")
   -- a new build: recompiled again
   local h3 = T.H.new({ sd = "t_stamp3", files = { [B] = "v9-2\n", [C] = done } })
   T.eq(modes(h3), "config:btc menus:btc")

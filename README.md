@@ -1,4 +1,4 @@
-# FreeFPV (v2.1)
+# FreeFPV (v2.2)
 
 An FPV **acro trainer** for **EdgeTX radios with a 128×64 black & white screen** (Radiomaster TX12 / TX12 MK2 /
 Boxer / Pocket / GX12 / Zorro, Jumper T-Pro / T-Lite / T20 — the `PCB=X7` family).
@@ -90,6 +90,8 @@ costs about the same as CITY's (a test checks it with `tools/mapcost.lua`).
 
 ## Screen
 
+Sky: day (dotted clouds that tilt with you and a sun) on CITY, T_OVAL and T_SKY, night (stars) on METRO, SPACE
+and T_TECH; SKY in the settings picks another for every map. Everything in front hides it.
 Horizon (solid, slightly curved like a wide FPV lens shows it, rolls with you; nothing when it is out of view),
 dotted ground grid around you, obstacles drawn **solid**: everything is
 drawn far to near and each box hides what is behind it (grid, horizon, other buildings); only the faces you can
@@ -102,6 +104,7 @@ bottom left.
 | setting | range | default |
 |---|---|---|
 | MAP | CITY / METRO / SPACE / T_OVAL / T_TECH / T_SKY (T_ = race tracks) | CITY |
+| SKY | AUTO (the map's own) / DAY (clouds and a sun) / NIGHT (stars) / OFF (a little faster) | AUTO |
 | QUAD | WHOOP / 2.5IN / 3IN / 3.5IN / 5IN (also sets CAMERA ANGLE) | 5IN |
 | MODE | ACRO / ANGLE | ACRO |
 | CRASH | ON / OFF | ON |

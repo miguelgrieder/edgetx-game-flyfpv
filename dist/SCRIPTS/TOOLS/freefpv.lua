@@ -62,7 +62,7 @@ local frameTicks = 5 -- smoothed time between frames (10 ms units), for the DEBU
 -- switch the loaded group, freeing the other one first
 local function menuMode()
   if flight then
-    loaded.flight, loaded.render, loaded.solid, loaded.wire, flight, render = nil, nil, nil, nil, nil, nil
+    loaded.flight, loaded.render, loaded.solid, loaded.wire, loaded.sky, flight, render = nil, nil, nil, nil, nil, nil, nil
     collectgarbage()
   end
   if not menus then

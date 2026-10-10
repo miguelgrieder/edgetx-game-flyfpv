@@ -179,12 +179,39 @@ T.test("on every map the gate and tunnel openings are clear of buildings and pol
 end)
 
 -- CITY ran 18-20 FPS on a GX12 when its worst view in this scan cost 35k instructions and 175 lcd calls
--- (v2.0). Since v2.1 each line costs ~25 % fewer instructions, so the lcd calls may grow a little: no map
--- may cost more than 38k instructions or 250 lcd calls in its worst view (tools/mapcost.lua)
-T.test("no map's worst view costs more than CITY's did at 18-20 FPS (+10 % instructions, 250 lcd calls)", function()
+-- (v2.0). Since v2.1 each line costs ~25 % fewer instructions, so the lcd calls may grow a little (CITY's
+-- tunnel, roof, chimney and day sky): no map may cost more than 38k instructions or 270 lcd calls in its
+-- worst view (tools/mapcost.lua). SKY OFF in the settings takes the sky's part away
+T.test("no map's worst view costs more than CITY's did at 18-20 FPS (+10 % instructions, 270 lcd calls)", function()
   local scan = dofile("tools/mapcost.lua")
   for _, m in ipairs(MAPS) do
     local i, l = scan(m)
-    T.ok(i <= 38 and l <= 250, m .. ": " .. i .. "k instructions, " .. l .. " lcd calls (budget 38k, 250)")
+    T.ok(i <= 38 and l <= 270, m .. ": " .. i .. "k instructions, " .. l .. " lcd calls (budget 38k, 270)")
   end
+end)
+
+T.test("SKY: AUTO takes the map's sky, DAY gives clouds and a sun, NIGHT stars, OFF nothing", function()
+  local function sky(map, s)
+    local _, f = setupMap(map, { SKY = s })
+    local W = f.W
+    return W.ns, W.nk, W.sun, W.sky
+  end
+  local day, night = { sky = "day" }, { sky = "night", stars = 30 }
+  local ns, nk, sun = sky(day, 1)
+  T.eq(ns, 0) T.ok(nk > 0, "clouds") T.eq(sun, true)
+  ns, nk, sun = sky(night, 1)
+  T.eq(ns, 30) T.eq(nk, 0) T.eq(sun, false)
+  ns, nk, sun = sky(night, 2)
+  T.eq(ns, 0) T.ok(nk > 0, "clouds") T.eq(sun, true)
+  ns, nk, sun = sky(day, 3)
+  T.eq(ns, 40) T.eq(nk, 0) T.eq(sun, false)
+  local s
+  ns, nk, sun, s = sky(day, 4)
+  T.eq(ns, 0) T.eq(nk, 0) T.eq(sun, false) T.eq(s, false)
+  -- the sun is drawn where it is (looking at it, level): its disk is lit
+  local h, f, r = setupMap({ sky = "day", sun = { 0, 30 }, clouds = {} }, { CAMERA = 30, HUD = 0 })
+  f.pz, f.ground = 5, false
+  lcd.clear()
+  r.draw(0)
+  T.eq(h.fb():get(64, 32), 1) -- straight ahead and 30 deg up, the camera's centre
 end)

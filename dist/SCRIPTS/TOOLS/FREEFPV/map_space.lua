@@ -5,6 +5,7 @@
 return {
   grid = 20,
   spawn = { 0, 0, 0 },
+  sky = "night",
   stars = 40,
   far = 60,
   box = { -40, 20, 6, 6, 3, 40, 130, 8, 8, 4 },

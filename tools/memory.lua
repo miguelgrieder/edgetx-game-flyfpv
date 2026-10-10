@@ -1,7 +1,7 @@
 -- lua5.2 tools/memory.lua: compile allocations per built file and resident Lua heap per phase
 -- (PC numbers: 64-bit, with debug info; the radio uses less, but the ratios hold)
 local files = { "dist/SCRIPTS/TOOLS/freefpv.lua" }
-for _, n in ipairs({ "config", "menus", "flight", "render", "solid", "world", "wire", "map_city", "map_metro", "map_space", "map_oval", "map_tech", "map_sky" }) do
+for _, n in ipairs({ "config", "menus", "flight", "render", "solid", "world", "wire", "sky", "map_city", "map_metro", "map_space", "map_oval", "map_tech", "map_sky" }) do
   files[#files + 1] = "dist/SCRIPTS/TOOLS/FREEFPV/" .. n .. ".lua"
 end
 for _, p in ipairs(files) do

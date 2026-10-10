@@ -29,6 +29,7 @@ for _, name in ipairs(maps) do
   local cf, f = h.config, h.flight
   cf.defaults()
   cf.v.HUD = 0
+  cf.v.SKY = tonumber(os.getenv("SKY") or "1")
   f.load(h.radio(h.app.use, name, true)); f.setup(); f.spawn()
   local r = h.render
   local W = f.W

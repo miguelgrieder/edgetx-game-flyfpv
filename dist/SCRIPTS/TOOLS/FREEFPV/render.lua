@@ -205,8 +205,8 @@ local function gate(i, pat)
   seg3(ax1 + wx, ay1 + wy, az1 + wz, bx + wx, by + wy, bz + wz, pat)
 end
 
--- tunnels and stars live in wire.lua, loaded on the first frame only for maps that have them
-local wire
+-- tunnels live in wire.lua and the sky in sky.lua, loaded on the first frame only for maps that have them
+local wire, sky
 local function basis() return rx, ry, rz, ux, uy, uz, fx, fy, fz end
 
 -- everything in view, sorted far to near (painter's algorithm: near boxes hide what is behind)
@@ -310,9 +310,11 @@ function M.draw(thr)
   M.camera()
   solid.camera(px, py, pz, rx, ry, rz, ux, uy, uz, fx, fy, fz)
   local W = flight.W
-  if not wire and (W.nt > 0 or W.ns > 0) then wire = use("wire")(tr, seg3, VX, VY, VZ, CX, CY, F, basis, M) end
-  if wire then
-    local t = wire.stars()
+  if not wire and W.nt > 0 then wire = use("wire")(tr, seg3, VX, VY, VZ, CX, CY, F, basis, M) end
+  if not sky and W.sky then sky = use("sky")(seg2, drawLine, basis) end
+  if sky then
+    local c, t = sky.draw()
+    lines = lines + c
     if t < top then top = t end
   end
   horizon()

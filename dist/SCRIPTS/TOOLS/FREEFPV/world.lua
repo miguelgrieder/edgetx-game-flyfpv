@@ -3,10 +3,19 @@
 -- { grid, spawn = {x, y, hdg}, box = {x, y, w, d, h, ...},
 -- pole = {x, y, h, ...}, gate = {x, y, axis, ...}, fbox = {x, y, z, w, d, h, ...} (floating box, z = its
 -- bottom), fpole = {x, y, z, h, ...}, tube = {x, y, z, axis, length, side, ...}, roof = {x, y, z, side,
--- hole, ...}, stars = count, far = view distance in m (default render.FAR: big maps see less, draw less) }
+-- hole, ...}, sky = "day" | "night", stars = count (night), clouds = {azimuth, elevation, size, ...} and
+-- sun = {azimuth, elevation} (day; degrees, azimuth clockwise from north), far = view distance in m
+-- (default render.FAR: big maps see less, draw less) }
 -- (the tables are built once here, when the map loads; nothing is allocated while flying)
+local use = ...
+local config = use("config")
 local sqrt, sin, cos = math.sqrt, math.sin, math.cos
+local RAD = math.pi / 180
 local W
+
+-- a day sky when the map does not set its own
+local CLOUDS = { 20, 18, 1, 95, 25, 0.8, 160, 15, 1.2, 230, 22, 0.9, 300, 28, 1 }
+local SUN = { 60, 30 }
 
 -- hidden boxes (gate bars, tunnel walls) wait in H and go after the drawn ones, so render only walks
 -- the first W.nv boxes
@@ -85,9 +94,14 @@ return function(M, map)
   for i = 1, #p, 6 do tube(p[i], p[i + 1], p[i + 2], p[i + 3], p[i + 4], p[i + 5]) end
   p = map.roof or {}
   for i = 1, #p, 5 do roof(p[i], p[i + 1], p[i + 2], p[i + 3], p[i + 4]) end
+  -- the sky: the SKY setting (1 AUTO = the map's own, 2 DAY, 3 NIGHT, 4 OFF)
+  local s = config.v.SKY or 1
+  local sky = map.sky or (map.stars and "night") or "day"
+  if s == 2 then sky = "day" elseif s == 3 then sky = "night" elseif s == 4 then sky = "off" end -- int
+  local night, day = sky == "night", sky == "day"
   -- stars: fixed pseudo-random directions above the horizon (same sky every time)
   local seed = 7
-  for k = 1, map.stars or 0 do
+  for k = 1, night and (map.stars or 40) or 0 do
     seed = (seed * 16807) % 2147483647
     local a = seed / 2147483647 * 2 * math.pi
     seed = (seed * 16807) % 2147483647
@@ -95,6 +109,20 @@ return function(M, map)
     local c = sqrt(1 - z * z)
     W.ns, W.sx[k], W.sy[k], W.sz[k] = k, c * sin(a), c * cos(a), z
   end
+  -- clouds and the sun: directions from azimuth and elevation
+  W.nk, W.sun = 0, false
+  if day then
+    local c = map.clouds or CLOUDS
+    for i = 1, #c, 3 do
+      local a, e = c[i] * RAD, c[i + 1] * RAD
+      local k = W.nk + 1
+      W.nk, W.kx[k], W.ky[k], W.kz[k], W.ks[k] = k, cos(e) * sin(a), cos(e) * cos(a), sin(e), c[i + 2]
+    end
+    local u = map.sun or SUN
+    local a, e = u[1] * RAD, u[2] * RAD
+    W.sun, W.sunx, W.suny, W.sunz = true, cos(e) * sin(a), cos(e) * cos(a), sin(e)
+  end
+  W.sky = W.ns > 0 or W.nk > 0 or W.sun
   local g = map.gate or {}
   local hw, z1, z2 = M.GATE_W, M.GATE_Z1, M.GATE_Z2
   for i = 1, #g, 3 do
