@@ -196,6 +196,10 @@ local function gate(i, pat)
   seg3(VX[2], VY[2], VZ[2], VX[6], VY[6], VZ[6], pat)
 end
 
+-- tunnels and stars live in wire.lua, loaded on the first frame only for maps that have them
+local wire
+local function basis() return rx, ry, rz, ux, uy, uz, fx, fy, fz end
+
 -- everything in view, sorted far to near (painter's algorithm: near boxes hide what is behind)
 local ORD, DST = {}, {}
 local function objects()
@@ -220,6 +224,17 @@ local function objects()
       ORD[n], DST[n] = -i, cx * cx + cy * cy + cz * cz
     end
   end
+  -- tunnels: after the gates in ORD (-ng - i)
+  for i = 1, W.nt do
+    local l, s = W.tl[i], W.ts[i]
+    local cx, cy, cz
+    if W.ta[i] == 2 then cx, cy, cz = tr(W.tx[i], W.ty[i], W.tz[i] + l / 2) -- int
+    else cx, cy, cz = tr(W.tx[i], W.ty[i], W.tz[i] + s / 2) end
+    if visible(cx, cy, cz, l / 2 + s) then
+      n = n + 1
+      ORD[n], DST[n] = -W.ng - i, cx * cx + cy * cy + cz * cz
+    end
+  end
   -- insertion sort, farthest first (no table library on the radio)
   for i = 2, n do
     local o, d = ORD[i], DST[i]
@@ -235,7 +250,11 @@ local function objects()
     if lines + rows >= M.BUDGET then return end
     local i = ORD[k]
     local pat = DST[k] > far2 and DOTTED or SOLID
-    if i < 0 then gate(-i, pat)
+    if i < -W.ng then
+      -- a tunnel's centre can be far while its near end is close: solid by its nearest part
+      local d = M.SOLID_D + W.tl[-i - W.ng] / 2
+      wire.tube(-i - W.ng, DST[k] > d * d and DOTTED or SOLID)
+    elseif i < 0 then gate(-i, pat)
     elseif K[i] == 2 then -- int
       line((X1[i] + X2[i]) / 2, (Y1[i] + Y2[i]) / 2, Z1[i], (X1[i] + X2[i]) / 2, (Y1[i] + Y2[i]) / 2, Z2[i], pat) -- pole
     else
@@ -272,6 +291,9 @@ end
 function M.draw(thr)
   lines, rows, M.top = 0, 0, 64
   M.camera()
+  local W = flight.W
+  if not wire and (W.nt > 0 or W.ns > 0) then wire = use("wire")(tr, seg3, VX, VY, VZ, CX, CY, F, basis, M) end
+  if wire then wire.stars() end
   horizon()
   grid()
   objects()

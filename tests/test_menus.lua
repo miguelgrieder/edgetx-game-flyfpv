@@ -40,7 +40,7 @@ T.test("settings: edit values, a new quad brings its camera angle, saved on exit
 end)
 
 T.test("corrupted settings are ignored line by line", function()
-  local h = T.H.new({ sd = "t_menus3", setup = T.H.cfg("garbage\nMAP=9\nQUAD=2\nRP_MAX=675\nMODE=2\n") })
+  local h = T.H.new({ sd = "t_menus3", setup = T.H.cfg("garbage\nMAP=99\nQUAD=2\nRP_MAX=675\nMODE=2\n") })
   T.eq(h.config.v.MAP, 1) T.eq(h.config.v.QUAD, 2) T.eq(h.config.v.RP_MAX, 670) T.eq(h.config.v.MODE, 2)
 end)
 
@@ -107,15 +107,15 @@ T.test("after an update each module is recompiled once, so an old .luac can't ou
   end
   local h = T.H.new({ sd = "t_stamp", files = { [B] = "v9-1\n" } })
   fly(h)
-  T.eq(modes(h), "config:btc menus:btc flight:btc render:btc solid:btc map_field:btc")
+  T.eq(modes(h), "config:btc menus:btc flight:btc map_field:btc world:btc render:btc solid:btc")
   local f = h.S.realio.open(h.S.sdroot .. C, "rb")
   local done = f:read("*a")
   f:close()
-  T.eq(done, "v9-1\nconfig\nmenus\nflight\nrender\nsolid\nmap_field\n")
+  T.eq(done, "v9-1\nconfig\nmenus\nflight\nmap_field\nworld\nrender\nsolid\n")
   -- next start, same build: the .luac files are used
   local h2 = T.H.new({ sd = "t_stamp2", files = { [B] = "v9-1\n", [C] = done } })
   fly(h2)
-  T.eq(modes(h2), "config:bt menus:bt flight:bt render:bt solid:bt map_field:bt")
+  T.eq(modes(h2), "config:bt menus:bt flight:bt map_field:bt world:bt render:bt solid:bt")
   -- a new build: recompiled again
   local h3 = T.H.new({ sd = "t_stamp3", files = { [B] = "v9-2\n", [C] = done } })
   T.eq(modes(h3), "config:btc menus:btc")

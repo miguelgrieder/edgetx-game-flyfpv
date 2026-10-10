@@ -12,12 +12,12 @@ return function(tr, seg2, seg3, NEAR, CX, CY, F, drawLine)
   local VX, VY, VZ, SX, SY = {}, {}, {}, {}, {}
   for i = 1, 8 do VX[i], VY[i], VZ[i], SX[i], SY[i] = 0, 0, 0, 0, 0 end
 
-  -- faces by corner index: x1 side, x2 side, y1 side, y2 side, top (the bottom is never seen)
-  local FACES = { 1, 4, 8, 5, 2, 3, 7, 6, 1, 2, 6, 5, 4, 3, 7, 8, 5, 6, 7, 8 }
+  -- faces by corner index: x1 side, x2 side, y1 side, y2 side, top, bottom (seen only under a floating box)
+  local FACES = { 1, 4, 8, 5, 2, 3, 7, 6, 1, 2, 6, 5, 4, 3, 7, 8, 5, 6, 7, 8, 1, 2, 3, 4 }
   -- box edges as corner pairs with their two faces (1 x1, 2 x2, 3 y1, 4 y2, 5 top, 6 bottom)
   local EB = { 1, 2, 3, 6, 2, 3, 2, 6, 3, 4, 4, 6, 4, 1, 1, 6, 5, 6, 3, 5, 6, 7, 2, 5, 7, 8, 4, 5, 8, 5, 1, 5,
     1, 5, 1, 3, 2, 6, 2, 3, 3, 7, 2, 4, 4, 8, 1, 4 }
-  local VIS = { false, false, false, false, false, false } -- faces seen (the bottom never is)
+  local VIS = { false, false, false, false, false, false } -- faces seen
   local front = true -- whole box in front of the near plane
   local QX, QY, QZ, PX, PY = {}, {}, {}, {}, {}
   -- the fill works in bands of 2 screen rows (half the work; edges are still drawn exactly):
@@ -152,7 +152,7 @@ return function(tr, seg2, seg3, NEAR, CX, CY, F, drawLine)
     VX[7], VY[7], VZ[7] = bx + yx + zx, by + yy + zy, bz + yz + zz
     VX[8], VY[8], VZ[8] = dx + zx, dy + zy, dz + zz
     -- a face is seen when the camera is on its outer side
-    VIS[1], VIS[2], VIS[3], VIS[4], VIS[5] = cpx < x1, cpx > x2, cpy < y1, cpy > y2, cpz > z2
+    VIS[1], VIS[2], VIS[3], VIS[4], VIS[5], VIS[6] = cpx < x1, cpx > x2, cpy < y1, cpy > y2, cpz > z2, cpz < z1
     front = true
     for k = 1, 8 do
       local z = VZ[k]
@@ -172,7 +172,7 @@ return function(tr, seg2, seg3, NEAR, CX, CY, F, drawLine)
         end
       end
     else
-      for f = 1, 5 do
+      for f = 1, 6 do
         if VIS[f] then face(f) end
       end
     end

@@ -17,8 +17,10 @@ M.SUB, M.DTR, M.scale = 4, 0.0125, 1 -- substeps per frame, real seconds per sub
 M.ANGLE_MAX = 55 -- angle mode: full stick tilt (deg)
 M.ANGLE_GAIN = 6 -- angle mode: deg/s of correction per deg of error
 
--- world: collision boxes (kind 1 box, 2 pole, 0 hidden gate bar) and gates
-local W = { x1 = {}, y1 = {}, z1 = {}, x2 = {}, y2 = {}, z2 = {}, kind = {}, nb = 0, gx = {}, gy = {}, ga = {}, ng = 0 }
+-- world: collision boxes (kind 1 box, 2 pole, 0 hidden gate bar / tunnel wall), gates, wire tunnels
+-- and the stars of the sky (unit directions)
+local W = { x1 = {}, y1 = {}, z1 = {}, x2 = {}, y2 = {}, z2 = {}, kind = {}, nb = 0, gx = {}, gy = {}, ga = {}, ng = 0,
+  tx = {}, ty = {}, tz = {}, ta = {}, tl = {}, ts = {}, nt = 0, sx = {}, sy = {}, sz = {}, ns = 0 }
 local NEARB, nnear = {}, 0 -- boxes close enough to touch during this frame
 M.W = W
 
@@ -31,47 +33,12 @@ function M.rate(x, center, max, expo)
   return x * center + move * expof
 end
 
-local function box(x1, y1, z1, x2, y2, z2, kind)
-  local n = W.nb + 1
-  W.nb = n
-  W.x1[n], W.y1[n], W.z1[n], W.x2[n], W.y2[n], W.z2[n], W.kind[n] = x1, y1, z1, x2, y2, z2, kind
-end
-
 -- gate: 2 m wide opening from 0.5 to 2.5 m; axis 0 = spans x (fly through along y), 1 = spans y
 M.GATE_W, M.GATE_Z1, M.GATE_Z2 = 1, 0.5, 2.5
 
--- build the world from a map table { grid, spawn = {x, y, hdg}, box = {x, y, w, d, h, ...},
--- pole = {x, y, h, ...}, gate = {x, y, axis, ...} }
+-- build the world from a map table (world.lua: loaded for this and dropped, it is not needed in flight)
 function M.load(map)
-  W.nb, W.ng = 0, 0
-  local b = map.box or {}
-  for i = 1, #b, 5 do
-    local x, y, w, d, h = b[i], b[i + 1], b[i + 2] / 2, b[i + 3] / 2, b[i + 4]
-    box(x - w, y - d, 0, x + w, y + d, h, 1)
-  end
-  local p = map.pole or {}
-  for i = 1, #p, 3 do box(p[i] - 0.1, p[i + 1] - 0.1, 0, p[i] + 0.1, p[i + 1] + 0.1, p[i + 2], 2) end
-  local g = map.gate or {}
-  local hw, z1, z2 = M.GATE_W, M.GATE_Z1, M.GATE_Z2
-  for i = 1, #g, 3 do
-    local x, y, a = g[i], g[i + 1], g[i + 2]
-    local n = W.ng + 1
-    W.ng, W.gx[n], W.gy[n], W.ga[n] = n, x, y, a
-    -- bars (invisible collision boxes): 2 posts, top, bottom; t = half thickness
-    local t = 0.05
-    local ax, ay = a == 0 and 1 or 0, a == 0 and 0 or 1 -- along the opening (int)
-    local bx, by = ay, ax -- across
-    for s = -1, 1, 2 do
-      local cx, cy = x + ax * s * (hw + t), y + ay * s * (hw + t)
-      box(cx - t - bx * t, cy - t - by * t, 0, cx + t + bx * t, cy + t + by * t, z2 + t, 0)
-    end
-    local ex, ey = ax * (hw + 2 * t) + bx * t, ay * (hw + 2 * t) + by * t
-    box(x - ex, y - ey, z2, x + ex, y + ey, z2 + 2 * t, 0)
-    box(x - ex, y - ey, z1 - 2 * t, x + ex, y + ey, z1, 0)
-  end
-  M.grid = map.grid or 10
-  local s = map.spawn or { 0, 0, 0 }
-  M.sx, M.sy, M.sh = s[1], s[2], s[3]
+  use("world", true)(M, map)
 end
 
 -- quad type and rates from the settings
@@ -147,7 +114,7 @@ local function collide()
   local X1, Y1, Z1, X2, Y2, Z2 = W.x1, W.y1, W.z1, W.x2, W.y2, W.z2
   for k = 1, nnear do
     local i = NEARB[k]
-    if px + r > X1[i] and px - r < X2[i] and py + r > Y1[i] and py - r < Y2[i] and pz - r < Z2[i] then
+    if px + r > X1[i] and px - r < X2[i] and py + r > Y1[i] and py - r < Y2[i] and pz - r < Z2[i] and pz + r > Z1[i] then
       local cx = px < X1[i] and X1[i] or (px > X2[i] and X2[i] or px)
       local cy = py < Y1[i] and Y1[i] or (py > Y2[i] and Y2[i] or py)
       local cz = pz < Z1[i] and Z1[i] or (pz > Z2[i] and Z2[i] or pz)
@@ -166,7 +133,8 @@ local function collide()
           if X2[i] - px < best then best, cx, dx = X2[i] - px, X2[i], 1 end
           if py - Y1[i] < best then best, cx, cy, dx, dy = py - Y1[i], px, Y1[i], 0, -1 end
           if Y2[i] - py < best then best, cx, cy, dx, dy = Y2[i] - py, px, Y2[i], 0, 1 end
-          if Z2[i] - pz < best then cx, cy, cz, dx, dy, dz = px, py, Z2[i], 0, 0, 1 end
+          if Z2[i] - pz < best then best, cx, cy, cz, dx, dy, dz = Z2[i] - pz, px, py, Z2[i], 0, 0, 1 end
+          if pz - Z1[i] < best then cx, cy, cz, dx, dy, dz = px, py, Z1[i], 0, 0, -1 end
           d = 1
         end
         local nx, ny, nz = dx / d, dy / d, dz / d

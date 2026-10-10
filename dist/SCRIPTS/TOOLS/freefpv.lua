@@ -62,7 +62,7 @@ local frameTicks = 5 -- smoothed time between frames (10 ms units), for the DEBU
 -- switch the loaded group, freeing the other one first
 local function menuMode()
   if flight then
-    loaded.flight, loaded.render, loaded.solid, flight, render = nil, nil, nil, nil, nil
+    loaded.flight, loaded.render, loaded.solid, loaded.wire, flight, render = nil, nil, nil, nil, nil, nil
     collectgarbage()
   end
   if not menus then
@@ -79,9 +79,10 @@ local function flightMode()
   end
   if not flight then
     flight = use("flight")
-    render = use("render")
-    flight.load(use(config.MAPFILE[config.v.MAP], true)) -- map data is copied, the file is not kept
+    -- the map is built before render loads: its files (map, world.lua) are dropped right after
+    flight.load(use(config.MAPFILE[config.v.MAP], true))
     flight.setup()
+    render = use("render")
     collectgarbage()
   end
 end
