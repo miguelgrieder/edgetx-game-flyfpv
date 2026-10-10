@@ -73,41 +73,6 @@ function M.spawn()
   M.ground, M.crashed, M.t = true, false, 0
 end
 
--- re-square the attitude: normalise f, make r orthogonal to f, u = r x f. The vectors are always
--- almost unit, so 1/length = (3 - length^2) / 2 is exact enough and needs no sqrt (slow on the radio)
-local function orthonormalize()
-  local fx, fy, fz = M.fx, M.fy, M.fz
-  local s = (3 - (fx * fx + fy * fy + fz * fz)) / 2
-  fx, fy, fz = fx * s, fy * s, fz * s
-  local rx, ry, rz = M.rx, M.ry, M.rz
-  local d = rx * fx + ry * fy + rz * fz
-  rx, ry, rz = rx - d * fx, ry - d * fy, rz - d * fz
-  s = (3 - (rx * rx + ry * ry + rz * rz)) / 2
-  rx, ry, rz = rx * s, ry * s, rz * s
-  M.fx, M.fy, M.fz, M.rx, M.ry, M.rz = fx, fy, fz, rx, ry, rz
-  M.ux, M.uy, M.uz = ry * fz - rz * fy, rz * fx - rx * fz, rx * fy - ry * fx
-end
-
--- rotate the body by small angles: roll a (right wing down), pitch b (nose down), yaw c (nose right)
-local function rotate(a, b, c)
-  -- angles per substep are small (< 0.1 rad): series instead of 6 sin/cos calls (no double FPU on the radio)
-  local a2, b2, c2 = a * a, b * b, c * c
-  local ca, sa, cb, sb = 1 - a2 / 2, a - a * a2 / 6, 1 - b2 / 2, b - b * b2 / 6
-  local cc, sc = 1 - c2 / 2, c - c * c2 / 6
-  local fx, fy, fz, rx, ry, rz, ux, uy, uz = M.fx, M.fy, M.fz, M.rx, M.ry, M.rz, M.ux, M.uy, M.uz
-  -- roll about f
-  ux, uy, uz, rx, ry, rz = ux * ca + rx * sa, uy * ca + ry * sa, uz * ca + rz * sa,
-    rx * ca - ux * sa, ry * ca - uy * sa, rz * ca - uz * sa
-  -- pitch about r
-  fx, fy, fz, ux, uy, uz = fx * cb - ux * sb, fy * cb - uy * sb, fz * cb - uz * sb,
-    ux * cb + fx * sb, uy * cb + fy * sb, uz * cb + fz * sb
-  -- yaw about u
-  fx, fy, fz, rx, ry, rz = fx * cc + rx * sc, fy * cc + ry * sc, fz * cc + rz * sc,
-    rx * cc - fx * sc, ry * cc - fy * sc, rz * cc - fz * sc
-  M.fx, M.fy, M.fz, M.rx, M.ry, M.rz, M.ux, M.uy, M.uz = fx, fy, fz, rx, ry, rz, ux, uy, uz
-  orthonormalize()
-end
-
 -- obstacles: push the sphere out; CRASH ON crashes (a whoop bounces), CRASH OFF slides
 local function collide()
   local px, py, pz, r = M.px, M.py, M.pz, M.radius
@@ -150,55 +115,96 @@ local function collide()
   M.px, M.py, M.pz = px, py, pz
 end
 
--- one physics substep; sticks -1..1, throttle 0..1
-function M.step(ail, ele, thr, rud)
-  local dt, dtr = M.DT, M.DTR
+-- n physics substeps; throttle thr 0..1 (the rates were worked out once per frame in M.tick). The state is
+-- read from M into locals, worked on there and written back: on the radio a table field costs an
+-- instruction each time, a local nothing, and this runs 4 x SIM SPEED times a frame.
+local function run(n, thr)
+  local dt, dtr, k = M.DT, M.DTR, M.lagK
   local T = thr * M.tw * G
-  if M.ground then
-    if T <= G * 1.02 then
-      -- sitting on the ground: level and still until the thrust beats the weight
-      M.vx, M.vy, M.vz = 0, 0, 0
-      M.wr, M.wp, M.wy = 0, 0, 0
-      return
+  local crR, cpR, cyR = M.cr * RAD, M.cp * RAD, M.cy * RAD
+  local drag, ground, crashOn = M.drag, M.ground, M.crashOn
+  local px, py, pz, vx, vy, vz, wr, wp, wy = M.px, M.py, M.pz, M.vx, M.vy, M.vz, M.wr, M.wp, M.wy
+  local fx, fy, fz, rx, ry, rz, ux, uy, uz = M.fx, M.fy, M.fz, M.rx, M.ry, M.rz, M.ux, M.uy, M.uz
+  local crashed = false
+  for _ = 1, n do
+    local still = false
+    if ground then
+      if T <= G * 1.02 then
+        -- sitting on the ground: level and still until the thrust beats the weight
+        vx, vy, vz, wr, wp, wy = 0, 0, 0, 0, 0, 0
+        still = true
+      else
+        ground = false
+      end
     end
-    M.ground = false
+    if not still then
+      -- motors and inertia: the real rate follows the command with a lag
+      wr = wr + (crR - wr) * k
+      wp = wp + (cpR - wp) * k
+      wy = wy + (cyR - wy) * k
+      -- rotate the body: roll a (right wing down), pitch b (nose down), yaw c (nose right). The angles
+      -- per substep are small (< 0.1 rad): series instead of sin/cos calls (no double FPU on the radio)
+      local a, b, c = wr * dtr, wp * dtr, wy * dtr
+      local a2, b2, c2 = a * a, b * b, c * c
+      local ca, sa, cb, sb = 1 - a2 / 2, a - a * a2 / 6, 1 - b2 / 2, b - b * b2 / 6
+      local cc, sc = 1 - c2 / 2, c - c * c2 / 6
+      -- roll about f
+      ux, uy, uz, rx, ry, rz = ux * ca + rx * sa, uy * ca + ry * sa, uz * ca + rz * sa,
+        rx * ca - ux * sa, ry * ca - uy * sa, rz * ca - uz * sa
+      -- pitch about r
+      fx, fy, fz, ux, uy, uz = fx * cb - ux * sb, fy * cb - uy * sb, fz * cb - uz * sb,
+        ux * cb + fx * sb, uy * cb + fy * sb, uz * cb + fz * sb
+      -- yaw about u
+      fx, fy, fz, rx, ry, rz = fx * cc + rx * sc, fy * cc + ry * sc, fz * cc + rz * sc,
+        rx * cc - fx * sc, ry * cc - fy * sc, rz * cc - fz * sc
+      -- re-square: normalise f, make r orthogonal to f, u = r x f. The vectors are always almost unit,
+      -- so 1/length = (3 - length^2) / 2 is exact enough and needs no sqrt
+      local q = (3 - (fx * fx + fy * fy + fz * fz)) / 2
+      fx, fy, fz = fx * q, fy * q, fz * q
+      local d = rx * fx + ry * fy + rz * fz
+      rx, ry, rz = rx - d * fx, ry - d * fy, rz - d * fz
+      q = (3 - (rx * rx + ry * ry + rz * rz)) / 2
+      rx, ry, rz = rx * q, ry * q, rz * q
+      ux, uy, uz = ry * fz - rz * fy, rz * fx - rx * fz, rx * fy - ry * fx
+      -- thrust along u, gravity, drag (linear + quadratic; drag set once per frame from the speed)
+      vx = vx + (ux * T - drag * vx) * dt
+      vy = vy + (uy * T - drag * vy) * dt
+      vz = vz + (uz * T - G - drag * vz) * dt
+      px, py, pz = px + vx * dt, py + vy * dt, pz + vz * dt
+      -- ground
+      if pz <= 0 then
+        local hs = sqrt(vx * vx + vy * vy)
+        pz = 0
+        if crashOn and (vz < -3.5 or uz < 0.6 or hs > 5) then
+          crashed = true
+          break
+        end
+        if T <= G * 1.02 and uz > 0 then
+          -- touchdown: settle level, keep the heading
+          ground = true
+          local h = atan2(fx, fy)
+          fx, fy, fz, rx, ry, rz, ux, uy, uz = sin(h), cos(h), 0, cos(h), -sin(h), 0, 0, 0, 1
+        else
+          vz = vz < 0 and 0 or vz
+          vx, vy = vx * 0.8, vy * 0.8
+        end
+      end
+      if nnear > 0 then
+        M.px, M.py, M.pz, M.vx, M.vy, M.vz = px, py, pz, vx, vy, vz
+        collide()
+        px, py, pz, vx, vy, vz = M.px, M.py, M.pz, M.vx, M.vy, M.vz
+        if M.crashed then crashed = true break end
+      end
+    end
   end
-  -- commanded body rates (deg/s)
-  local cr, cp, cy = M.cr, M.cp, M.cy -- commanded rates, worked out once per frame in M.tick
-  -- motors and inertia: the real rate follows the command with a lag
-  local k = M.lagK
-  M.wr = M.wr + (cr * RAD - M.wr) * k
-  M.wp = M.wp + (cp * RAD - M.wp) * k
-  M.wy = M.wy + (cy * RAD - M.wy) * k
-  rotate(M.wr * dtr, M.wp * dtr, M.wy * dtr)
-  -- thrust along u, gravity, drag (linear + quadratic)
-  local vx, vy, vz = M.vx, M.vy, M.vz
-  local drag = M.drag -- set once per frame from the speed (saves a sqrt per substep)
-  vx = vx + (M.ux * T - drag * vx) * dt
-  vy = vy + (M.uy * T - drag * vy) * dt
-  vz = vz + (M.uz * T - G - drag * vz) * dt
-  M.px, M.py, M.pz = M.px + vx * dt, M.py + vy * dt, M.pz + vz * dt
-  M.vx, M.vy, M.vz = vx, vy, vz
-  -- ground
-  if M.pz <= 0 then
-    local hs = sqrt(vx * vx + vy * vy)
-    if M.crashOn and (vz < -3.5 or M.uz < 0.6 or hs > 5) then
-      M.pz = 0
-      M.crashed = true
-      return
-    end
-    M.pz = 0
-    if T <= G * 1.02 and M.uz > 0 then
-      -- touchdown: settle level, keep the heading
-      M.ground = true
-      level(atan2(M.fx, M.fy))
-    else
-      M.vz = vz < 0 and 0 or vz
-      M.vx, M.vy = vx * 0.8, vy * 0.8
-    end
-  end
-  collide()
+  M.px, M.py, M.pz, M.vx, M.vy, M.vz, M.wr, M.wp, M.wy = px, py, pz, vx, vy, vz, wr, wp, wy
+  M.fx, M.fy, M.fz, M.rx, M.ry, M.rz, M.ux, M.uy, M.uz = fx, fy, fz, rx, ry, rz, ux, uy, uz
+  M.ground = ground
+  if crashed then M.crashed = true end
 end
+
+-- one physics substep; sticks -1..1, throttle 0..1
+function M.step(ail, ele, thr, rud) run(1, thr) end
 
 -- one 50 ms tick from raw stick values (-1024..1024)
 function M.tick(ail, ele, thr, rud)
@@ -233,10 +239,8 @@ function M.tick(ail, ele, thr, rud)
       NEARB[nnear] = i
     end
   end
-  for _ = 1, M.SUB do
-    M.step(a, e, t, y)
-    if M.crashed then return end
-  end
+  run(M.SUB, t)
+  if M.crashed then return end
   M.t = M.t + 1
 end
 

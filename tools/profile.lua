@@ -4,8 +4,10 @@
 -- camera poses (every 20 m, 3 heights, 8 headings, level and 30 deg nose down).
 local out = io.stdout
 local H = dofile("tools/harness.lua")
+-- HEAVY=n (environment): only frames over n instructions count (what the slow frames spend their time on)
 local maps = { ... }
 if #maps == 0 then maps = { "map_city", "map_metro", "map_space", "map_tech" } end
+local heavy = tonumber(os.getenv("HEAVY") or "0")
 
 local stub = math.max -- a C function that accepts numbers and returns at once
 local per, cnames = {}, {}
@@ -36,19 +38,23 @@ for _, name in ipairs(maps) do
             f.fx, f.fy, f.fz = math.sin(a) * math.cos(b), math.cos(a) * math.cos(b), -math.sin(b)
             f.rx, f.ry, f.rz = math.cos(a), -math.sin(a), 0
             f.ux, f.uy, f.uz = math.sin(a) * math.sin(b), math.cos(a) * math.sin(b), math.cos(b)
+            local fper, ftotal, fc = {}, 0, 0
             debug.sethook(function(ev)
               local info = debug.getinfo(2, "Sl")
               if ev == "count" then
                 local key = (info.short_src:match("([%w_]+%.lua)") or info.short_src) .. ":" .. info.linedefined
-                per[key] = (per[key] or 0) + 10
-                total = total + 10
+                fper[key] = (fper[key] or 0) + 10
+                ftotal = ftotal + 10
               elseif info.what == "C" then
-                ccalls = ccalls + 1
+                fc = fc + 1
               end
             end, "c", 10) -- a sample every 10 instructions
             r.draw(0)
             debug.sethook()
-            frames = frames + 1
+            if ftotal >= heavy then
+              for k2, v in pairs(fper) do per[k2] = (per[k2] or 0) + v end
+              total, ccalls, frames = total + ftotal, ccalls + fc, frames + 1
+            end
           end
         end
       end
