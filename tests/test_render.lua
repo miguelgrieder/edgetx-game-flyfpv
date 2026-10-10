@@ -52,20 +52,14 @@ T.test("uptilt puts the horizon low; it is curved like a wide lens, ends toward 
   T.ok(row and row >= 38 and row <= 40, "true horizon row " .. tostring(row))
 end)
 
-T.test("horizon out of view: only a short piece pinned near the edge, not a line across the ground", function()
+T.test("horizon out of view: nothing of it is drawn", function()
   local h, f, r = setup({ CAMERA = 35, HUD = 0 })
   nose(f, 20, 80) -- high, looking 45 deg down: the horizon is above the screen
   lcd.clear()
   r.draw(-1024)
-  local n, lo, hi = 0, 128, -1
-  for x = 0, 127 do
-    if h.fb():get(x, r.EDGE) == 1 then -- int
-      n = n + 1
-      if x < lo then lo = x end
-      if x > hi then hi = x end
-    end
-  end
-  T.ok(n >= 28 and lo >= 44 and hi <= 84, "pinned piece on row " .. r.EDGE .. ": " .. n .. " px, x " .. lo .. ".." .. hi)
+  local n = 0
+  for y = 0, 10 do for x = 0, 127 do n = n + h.fb():get(x, y) end end
+  T.eq(n, 0)
 end)
 
 T.test("nothing is ever drawn off-screen: 3000 random poses inside and around the obstacles", function()

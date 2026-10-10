@@ -117,51 +117,32 @@ end
 
 -- horizon: screen points whose ray is level ((sx-CX)*rz + (CY-sy)*uz + F*fz = 0), drawn slightly curved
 -- like a wide FPV lens shows it: the ends bend toward the screen centre by M.BOW of the line's distance
--- from it (through the centre it stays straight). Out of view (nose far down or up) only a short middle
--- piece is pinned M.EDGE px inside the nearest edge, with the same tilt: the roll stays readable without
--- a line across the ground. Always solid: dotted it vanished among the dotted grid lines. Drawn before
--- the objects, so buildings still hide it.
-M.EDGE = 6
+-- from it (through the centre it stays straight). Out of view nothing is drawn (seg2 clips it all).
+-- Always solid: dotted it vanished among the dotted grid lines. Drawn before the objects, so buildings
+-- still hide it.
 M.BOW = 0.15
-local HN = 8 -- curve segments; pinned: the middle 2 (1/4 of the line)
-local function curve(x0, y0, x1, y1, pinned)
+local HN = 8 -- curve segments
+local function curve(x0, y0, x1, y1)
   local dx, dy = x1 - x0, y1 - y0
   local l = sqrt(dx * dx + dy * dy)
   local nx, ny = -dy / l, dx / l
   local b = M.BOW * ((CX - x0) * nx + (CY - y0) * ny)
-  local k0, k1 = 0, HN
-  if pinned then k0, k1 = HN / 2 - 1, HN / 2 + 1 end
-  local px, py
-  for k = k0, k1 do
+  local px, py = x0 + nx * b, y0 + ny * b
+  for k = 1, HN do
     local s = k / HN
     local o = (2 * s - 1) * (2 * s - 1) * b
     local x, y = x0 + dx * s + nx * o, y0 + dy * s + ny * o
-    if px then seg2(px, py, x, y, SOLID) end
+    seg2(px, py, x, y, SOLID)
     px, py = x, y
   end
 end
 
 local function horizon()
-  local e = M.EDGE
   if rz * rz > uz * uz then
     -- steep line: x as a function of y
-    local xa, xb = CX - ((CY + 1) * uz + F * fz) / rz, CX - ((CY - 64) * uz + F * fz) / rz
-    if (xa < 0 and xb < 0) or (xa > 127 and xb > 127) then
-      local d = (xa + xb) / 2
-      d = (d > 63 and 127 - e or e) - d
-      curve(xa + d, -1, xb + d, 64, true)
-    else
-      curve(xa, -1, xb, 64)
-    end
+    curve(CX - ((CY + 1) * uz + F * fz) / rz, -1, CX - ((CY - 64) * uz + F * fz) / rz, 64)
   elseif uz < 0 or uz > 0 then
-    local ya, yb = CY + ((-1 - CX) * rz + F * fz) / uz, CY + ((128 - CX) * rz + F * fz) / uz
-    if (ya < 0 and yb < 0) or (ya > 63 and yb > 63) then
-      local d = (ya + yb) / 2
-      d = (d > 31 and 63 - e or e) - d
-      curve(-1, ya + d, 128, yb + d, true)
-    else
-      curve(-1, ya, 128, yb)
-    end
+    curve(-1, CY + ((-1 - CX) * rz + F * fz) / uz, 128, CY + ((128 - CX) * rz + F * fz) / uz)
   end
 end
 

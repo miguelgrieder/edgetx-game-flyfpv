@@ -1,4 +1,4 @@
-# FreeFPV (v1.8)
+# FreeFPV (v1.9)
 
 An FPV **acro trainer** for **EdgeTX radios with a 128×64 black & white screen** (Radiomaster TX12 / TX12 MK2 /
 Boxer / Pocket / GX12 / Zorro, Jumper T-Pro / T-Lite / T20 — the `PCB=X7` family).
@@ -85,9 +85,8 @@ Sticks are read by function (`ail`, `ele`, `thr`, `rud`), so your radio's own st
 
 ## Screen
 
-Horizon (solid, slightly curved like a wide FPV lens shows it, rolls with you; when it is out of view — nose far
-down or up — a short piece of it is pinned 6 px inside the nearest edge with the same tilt, so the roll is always
-readable without a line across the ground), dotted ground grid around you, obstacles drawn **solid**: everything is
+Horizon (solid, slightly curved like a wide FPV lens shows it, rolls with you; nothing when it is out of view),
+dotted ground grid around you, obstacles drawn **solid**: everything is
 drawn far to near and each box hides what is behind it (grid, horizon, other buildings); only the faces you can
 see get their edges drawn. Near objects have solid edges, far ones dotted; gates stay see-through. HUD: crosshair, throttle bar (left), ACRO/ANGLE, altitude in m (top right), speed in km/h (bottom
 right). DEBUG adds the live frame rate (FPS, 20 is the most an EdgeTX script can get) and the Lua memory in KB at the
