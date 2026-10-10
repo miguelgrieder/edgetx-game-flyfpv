@@ -1,16 +1,17 @@
 local T = dofile("tests/t.lua")
 
-local MAPS = { "map_field", "map_gates", "map_poles", "map_city" }
+local MAPS = { "map_field", "map_gates", "map_poles", "map_city", "map_metro", "map_space", "map_oval", "map_tech",
+  "map_sky" }
 
 local function setup(mapfile, cfg)
   local h = T.H.new({ sd = "t_world" })
-  local c, f, r = h.config, h.flight, h.render
+  local c, f = h.config, h.flight
   c.defaults()
   for k, v in pairs(cfg or {}) do c.v[k] = v end
   f.load(h.radio(h.app.use, mapfile, true))
   f.setup()
   f.spawn()
-  return h, f, r
+  return h, f, h.render -- render after the map, as in the game (it reads the map's view distance)
 end
 
 local function thrFor(t) return t * 2048 - 1024 end
@@ -144,4 +145,43 @@ T.test("floating box seen from below, a tunnel from inside and the stars are dra
   local n = 0
   for yy = 0, 20 do for xx = 0, 127 do n = n + h.fb():get(xx, yy) end end
   T.ok(n >= 3, "stars in the top rows: " .. n)
+end)
+
+T.test("on every map the gate and tunnel openings are clear of buildings and poles", function()
+  for _, m in ipairs(MAPS) do
+    local _, f = setup(m)
+    local W = f.W
+    -- free space to check: x1, y1, z1, x2, y2, z2
+    local free = {}
+    for i = 1, W.ng do
+      local x, y = W.gx[i], W.gy[i]
+      local ax, ay = W.ga[i] == 0 and 0.9 or 0.3, W.ga[i] == 0 and 0.3 or 0.9 -- int
+      free[#free + 1] = { x - ax, y - ay, 0.6, x + ax, y + ay, 2.4, m .. " gate " .. i }
+    end
+    for i = 1, W.nt do
+      local x, y, z, l, h = W.tx[i], W.ty[i], W.tz[i], W.tl[i] / 2 + 0.3, W.ts[i] / 2 - 0.1
+      local a = W.ta[i]
+      if a == 2 then free[#free + 1] = { x - h, y - h, z - 3, x + h, y + h, z + 2 * l + 3, m .. " chimney " .. i } -- int
+      elseif a == 0 then free[#free + 1] = { x - h, y - l - 3, z + 0.1, x + h, y + l + 3, z + 2 * h, m .. " tunnel " .. i } -- int
+      else free[#free + 1] = { x - l - 3, y - h, z + 0.1, x + l + 3, y + h, z + 2 * h, m .. " tunnel " .. i } end
+    end
+    for _, v in ipairs(free) do
+      for i = 1, W.nb do
+        if W.kind[i] > 0 and W.x1[i] < v[4] and W.x2[i] > v[1] and W.y1[i] < v[5] and W.y2[i] > v[2]
+          and W.z1[i] < v[6] and W.z2[i] > v[3] then
+          error(v[7] .. " is blocked by box " .. i)
+        end
+      end
+    end
+  end
+end)
+
+-- CITY runs 18-20 FPS on a GX12: no map may cost much more per frame in its worst view (tools/mapcost.lua)
+T.test("no map's worst view costs more than 10 % over CITY's (Lua instructions and lcd calls)", function()
+  local scan = dofile("tools/mapcost.lua")
+  local ci, cl = scan("map_city")
+  for _, m in ipairs(MAPS) do
+    local i, l = scan(m)
+    T.ok(i <= ci * 1.1 and l <= cl * 1.1, m .. ": " .. i .. "k instructions, " .. l .. " lcd calls (CITY " .. ci .. "k, " .. cl .. ")")
+  end
 end)

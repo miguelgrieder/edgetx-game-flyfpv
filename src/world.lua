@@ -3,7 +3,7 @@
 -- { grid, spawn = {x, y, hdg}, box = {x, y, w, d, h, ...},
 -- pole = {x, y, h, ...}, gate = {x, y, axis, ...}, fbox = {x, y, z, w, d, h, ...} (floating box, z = its
 -- bottom), fpole = {x, y, z, h, ...}, tube = {x, y, z, axis, length, side, ...}, roof = {x, y, z, side,
--- hole, ...}, stars = count }
+-- hole, ...}, stars = count, far = view distance in m (default render.FAR: big maps see less, draw less) }
 -- (the tables are built once here, when the map loads; nothing is allocated while flying)
 local sqrt, sin, cos = math.sqrt, math.sin, math.cos
 local W
@@ -12,6 +12,8 @@ local function box(x1, y1, z1, x2, y2, z2, kind)
   local n = W.nb + 1
   W.nb = n
   W.x1[n], W.y1[n], W.z1[n], W.x2[n], W.y2[n], W.z2[n], W.kind[n] = x1, y1, z1, x2, y2, z2, kind
+  -- bounding sphere radius, for render's view test (worked out once here: sqrt is slow on the radio)
+  W.rad[n] = sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1)) / 2
 end
 
 
@@ -103,6 +105,7 @@ return function(M, map)
     box(x - ex, y - ey, z1 - 2 * t, x + ex, y + ey, z1, 0)
   end
   M.grid = map.grid or 10
+  M.far = map.far
   local s = map.spawn or { 0, 0, 0 }
   M.sx, M.sy, M.sh = s[1], s[2], s[3]
 end

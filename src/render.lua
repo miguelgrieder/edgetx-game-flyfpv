@@ -11,7 +11,7 @@ local floor, sin, cos, sqrt = math.floor, math.sin, math.cos, math.sqrt
 local drawLine = lcd.drawLine -- looked up once: it is called hundreds of times per frame
 M.F = 40 -- focal length in px: ~116 deg horizontal field of view
 M.NEAR = 0.05 -- near plane (m)
-M.FAR = 120 -- objects farther than this are skipped (m)
+M.FAR = flight.far or 120 -- objects farther than this are skipped (m); a map can see less (map.far)
 M.SOLID_D = 40 -- nearer than this: solid lines, farther: dotted
 M.GRID_N = 3 -- grid lines each side of the quad (farther lines pile up at the horizon)
 M.BUDGET = 400 -- max lcd calls per frame for the 3D view (edges + fill rows)
@@ -163,7 +163,8 @@ end
 
 -- is a sphere (camera coordinates) worth drawing?
 local function visible(x, y, z, r)
-  if z + r < NEAR or z - r > M.FAR then return false end
+  local far = M.FAR + r
+  if z + r < NEAR or x * x + y * y + z * z > far * far then return false end
   local zz = z > NEAR and z or NEAR
   return (x < 0 and -x or x) - r < zz * CX / F and (y < 0 and -y or y) - r < zz * CY / F
 end
@@ -210,7 +211,7 @@ local function objects()
     if K[i] > 0 then
       local mx, my, mz = (X1[i] + X2[i]) / 2, (Y1[i] + Y2[i]) / 2, (Z1[i] + Z2[i]) / 2
       local cx, cy, cz = tr(mx, my, mz)
-      if visible(cx, cy, cz, ((X2[i] - X1[i]) + (Y2[i] - Y1[i]) + (Z2[i] - Z1[i])) / 2) then
+      if visible(cx, cy, cz, W.rad[i]) then
         n = n + 1
         ORD[n], DST[n] = i, cx * cx + cy * cy + cz * cz
       end

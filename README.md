@@ -1,4 +1,4 @@
-# FreeFPV (v1.9)
+# FreeFPV (v2.0)
 
 An FPV **acro trainer** for **EdgeTX radios with a 128×64 black & white screen** (Radiomaster TX12 / TX12 MK2 /
 Boxer / Pocket / GX12 / Zorro, Jumper T-Pro / T-Lite / T20 — the `PCB=X7` family).
@@ -82,6 +82,14 @@ Sticks are read by function (`ail`, `ele`, `thr`, `rud`), so your radio's own st
 | GATES | a 60 × 80 m loop of six gates |
 | POLES | a slalom line ahead, then a small pole forest |
 | CITY | eight blocks with 8 m streets and a square in the middle, a gate at the entrance |
+| METRO | a bigger city: 14 blocks 32 m apart; a plaza with a roof on four poles (a hole to fly up through, a chimney above it), a bridge over the main avenue, a subway tunnel, lamp posts, gates. Blocks past 36 m are not drawn |
+| SPACE | starry sky over a wide grid; floating blocks, a station, platforms, poles, tunnels, rings and a chimney at every height; a roof with a hole on tall poles |
+| OVAL | race: fast 50 × 150 m loop; gates, a tunnel on the west straight, a floating ring on the east one |
+| TECH | race: slalom, gates, under a low bridge, up through a chimney (enter from below), down through a roof's hole, back through a tunnel |
+| SKY | race in the air: rings climbing north, a high tunnel, a chimney to dive down (exit under it), a roof hole to fly up through, platforms |
+
+Tunnels, rings and chimneys are see-through wire (like gates); their walls still stop you. Every map's busiest view
+costs about the same as CITY's (a test checks it with `tools/mapcost.lua`).
 
 ## Screen
 
@@ -110,8 +118,17 @@ bottom left.
 ## Development
 
 Same setup as GateRush: `src/` modules, `src/main.lua` is the launcher; `tools/build.lua` copies them into the SD
-image in `dist/`. Two groups are never in memory together: **menus** (`menus`) and **flight** (`flight`, `render`
-and the selected map, whose data is copied and the file dropped). `config` stays loaded.
+image in `dist/`. Two groups are never in memory together: **menus** (`menus`) and **flight** (`flight`, `render`,
+`solid`, and `wire` only for maps with tunnels or stars). The selected map file and `world.lua`, which builds the
+world from it, are loaded once and dropped. `config` stays loaded.
+
+A map is a small file `src/map_<name>.lua` returning a table (all in metres; x east, y north):
+`box = {x, y, width, depth, height, ...}` (on the ground), `fbox = {x, y, bottom, width, depth, height, ...}`
+(floating), `pole = {x, y, height, ...}`, `fpole = {x, y, bottom, height, ...}`, `gate = {x, y, axis, ...}` (axis 0:
+fly through northward), `tube = {x, y, z, axis, length, side, ...}` (wire tunnel; axis 0 runs north, 1 east, 2 up =
+chimney; length 0 = a ring), `roof = {x, y, height, side, hole, ...}` (on 4 corner poles), `stars = count`,
+`far = view distance`, `grid`, `spawn = {x, y, heading}`. Add it to `MAPS`/`MAPFILE` in `config.lua` and to
+`tools/build.lua`.
 
 | command (Lua 5.2; on Windows `lua52.exe`) | what |
 |---|---|
@@ -120,6 +137,7 @@ and the selected map, whose data is copied and the file dropped). `config` stays
 | `lua5.2 tools/soak.lua 600` | random flying on every map × quad × crash setting |
 | `lua5.2 tools/memory.lua` | compile memory per file, Lua heap in menus and in flight |
 | `lua5.2 tools/cost.lua` | Lua instructions and C calls per frame in heavy CITY views (compares versions the way the radio would) |
+| `lua5.2 tools/mapcost.lua [map_x ...]` | worst and mean cost per frame of each map over a scan of camera poses |
 | `make sim` / `python tools/simhost/simu_host.py ...` | run it in the real EdgeTX firmware (Companion 2.12 DLLs), then `lua5.2 tools/simhost/compare.lua out/simu/fly out/simu/settings` |
 
 New golden after an intended visual change: `APPROVE=1 lua5.2 tests/run_all.lua test_screens`, look at

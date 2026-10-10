@@ -1,11 +1,12 @@
 -- Settings: ranges, defaults, quad types, .cfg persistence. Always loaded (small).
 local M = {}
 
-M.VERSION = "v1.9" -- shown on the title screen
+M.VERSION = "v2.0" -- shown on the title screen
 M.FILE = "/SCRIPTS/TOOLS/FREEFPV/freefpv.cfg"
 
-M.MAPS = { "FIELD", "GATES", "POLES", "CITY" }
-M.MAPFILE = { "map_field", "map_gates", "map_poles", "map_city" }
+M.MAPS = { "FIELD", "GATES", "POLES", "CITY", "METRO", "SPACE", "OVAL", "TECH", "SKY" }
+M.MAPFILE = { "map_field", "map_gates", "map_poles", "map_city", "map_metro", "map_space", "map_oval", "map_tech",
+  "map_sky" }
 
 -- quad types: thrust/weight, top speed (m/s), linear drag (1/s), rate response lag (s),
 -- collision radius (m), default camera angle (deg), bounces off obstacles (ducted)
@@ -19,7 +20,7 @@ M.QUADS = {
 
 -- names = labels by value (index = value - lo + 1); rates in deg/s, expo in hundredths
 M.ITEMS = {
-  { key = "MAP", name = "MAP", lo = 1, hi = 4, def = 1, names = M.MAPS },
+  { key = "MAP", name = "MAP", lo = 1, hi = #M.MAPS, def = 1, names = M.MAPS },
   { key = "QUAD", name = "QUAD", lo = 1, hi = 5, def = 5 },
   { key = "MODE", name = "MODE", lo = 1, hi = 2, def = 1, names = { "ACRO", "ANGLE" } },
   { key = "CRASH", name = "CRASH", lo = 0, hi = 1, def = 1, names = { "OFF", "ON" } },
