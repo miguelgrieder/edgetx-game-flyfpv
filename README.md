@@ -1,4 +1,4 @@
-# FreeFPV (v1.5)
+# FreeFPV (v1.6)
 
 An FPV **acro trainer** for **EdgeTX radios with a 128×64 black & white screen** (Radiomaster TX12 / TX12 MK2 /
 Boxer / Pocket / GX12 / Zorro, Jumper T-Pro / T-Lite / T20 — the `PCB=X7` family).
@@ -23,7 +23,14 @@ rolls, inverted flight, all of it. A small wireframe world with fixed obstacles;
 2. On the radio: **SYS** → **TOOLS** → **FreeFPV**.
 
 The radio compiles each file the first time it is used (a `.luac` appears next to it), so the first launch and
-the first flight take a moment. When updating, delete the old `.luac` files or copy everything again.
+the first flight take a moment. The radio keeps using a `.luac` that is newer than its `.lua`, and a radio
+clock ahead of the PC's makes an old `.luac` look newer than a freshly copied update, so the radio keeps
+running the old version. Since v1.6 the game handles this for its own modules (`FREEFPV/build.txt` holds
+the build's stamp; each module is recompiled once per new build, logged in `compiled.txt`). Only
+`freefpv.luac` next to `freefpv.lua` is compiled by EdgeTX itself, so when updating **delete
+`SCRIPTS/TOOLS/freefpv.luac`** (and, the first time you install v1.6, every `.luac` in `FREEFPV/`).
+If the radio shows "not enough memory" the first time it compiles, open the game again: files that
+were already compiled load from their `.luac`, which takes much less memory.
 
 ## Safety
 

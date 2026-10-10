@@ -96,3 +96,30 @@ T.test("pause menu: respawn and quit", function()
   T.eq(h.app.state(), 4)
   T.eq(h.flight.pz, 0)
 end)
+
+T.test("after an update each module is recompiled once, so an old .luac can't outlive it", function()
+  local B, C = "/SCRIPTS/TOOLS/FREEFPV/build.txt", "/SCRIPTS/TOOLS/FREEFPV/compiled.txt"
+  local function modes(h) return table.concat(h.S.loadModes, " ") end
+  local function fly(h)
+    toTitle(h)
+    h.step(0, 0, -1024, 0, "enter")
+    T.eq(h.app.state(), 4)
+  end
+  local h = T.H.new({ sd = "t_stamp", files = { [B] = "v9-1\n" } })
+  fly(h)
+  T.eq(modes(h), "config:btc menus:btc flight:btc render:btc solid:btc map_field:btc")
+  local f = h.S.realio.open(h.S.sdroot .. C, "rb")
+  local done = f:read("*a")
+  f:close()
+  T.eq(done, "v9-1\nconfig\nmenus\nflight\nrender\nsolid\nmap_field\n")
+  -- next start, same build: the .luac files are used
+  local h2 = T.H.new({ sd = "t_stamp2", files = { [B] = "v9-1\n", [C] = done } })
+  fly(h2)
+  T.eq(modes(h2), "config:bt menus:bt flight:bt render:bt solid:bt map_field:bt")
+  -- a new build: recompiled again
+  local h3 = T.H.new({ sd = "t_stamp3", files = { [B] = "v9-2\n", [C] = done } })
+  T.eq(modes(h3), "config:btc menus:btc")
+  -- no build file (running from src/): plain loads
+  local h4 = T.H.new({ sd = "t_stamp4" })
+  T.eq(modes(h4), "config:bt menus:bt")
+end)

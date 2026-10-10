@@ -7,12 +7,38 @@
 local DIR = "/SCRIPTS/TOOLS/FREEFPV/"
 local loaded = {}
 
+-- EdgeTX runs a file's .luac when it is newer than the .lua: with the radio's clock ahead of the PC's,
+-- the old .luac kept winning over freshly copied files and the radio ran the previous version.
+-- build.txt holds the build's stamp (tools/build.lua); compiled.txt that stamp and the modules
+-- already recompiled for it. A module's first load under a new stamp forces the recompile ("c").
+local function readText(name)
+  local f = io.open(DIR .. name, "r")
+  if not f then return "" end
+  local s = io.read(f, 400)
+  io.close(f)
+  return s or ""
+end
+local stamp = string.match(readText("build.txt"), "%S+") -- nil: no build file (tests from src/)
+local done = readText("compiled.txt")
+if stamp and string.match(done, "^%S*") ~= stamp then
+  done = stamp .. "\n"
+  local f = io.open(DIR .. "compiled.txt", "w")
+  if f then io.write(f, done) io.close(f) end
+end
+
 -- nocache: load a data file once (maps) without keeping it
 local function use(name, nocache)
   local m = loaded[name]
   if not m then
-    local chunk, err = loadScript(DIR .. name .. ".lua")
+    local fresh = not stamp or string.find(done, "\n" .. name .. "\n", 1, true)
+    collectgarbage() -- compiling is the memory peak: start it with the garbage gone
+    local chunk, err = loadScript(DIR .. name .. ".lua", fresh and "bt" or "btc")
     if not chunk then error(err) end
+    if not fresh then
+      done = done .. name .. "\n"
+      local f = io.open(DIR .. "compiled.txt", "a")
+      if f then io.write(f, name, "\n") io.close(f) end
+    end
     m = chunk(use)
     if not nocache then loaded[name] = m end
   end

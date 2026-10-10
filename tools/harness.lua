@@ -11,13 +11,19 @@ local EVENTS = {
   next = "EVT_VIRTUAL_NEXT", prev = "EVT_VIRTUAL_PREV",
 }
 
--- opts: target ("src" | "dist"), sd (name), noSaveFolder, modelName, clock, fast, setup(h)
+-- opts: target ("src" | "dist"), sd (name), noSaveFolder, modelName, clock, fast, setup(h),
+-- files ({ ["/SCRIPTS/..."] = text } written on the SD before the script loads)
 function H.new(opts)
   opts = opts or {}
   local sdroot = mock.sd(opts.sd or "default", not opts.noSaveFolder)
   local dist = (opts.target or "src") == "dist"
   local S = mock.install({ sdroot = sdroot, modelName = opts.modelName or "", clock = opts.clock or 1000,
     fast = opts.fast, scriptDir = dist and "dist/SCRIPTS/TOOLS/FREEFPV/" or "src/" })
+  for path, text in pairs(opts.files or {}) do
+    local f = assert(S.realio.open(sdroot .. path, "wb"))
+    f:write(text)
+    f:close()
+  end
   local h = { S = S, frame = 0, lastCalls = 0 }
   -- libraries a tool script does not get on the radio (verified with GateRush in the firmware simulator)
   local HIDDEN = { "table", "os", "debug", "coroutine" }
