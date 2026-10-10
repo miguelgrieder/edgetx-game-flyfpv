@@ -7,7 +7,7 @@ local floor = math.floor
 return function(tr, seg3, VX, VY, VZ, CX, CY, F, basis, R)
   local S = {}
 
-  -- wire tunnel i (see world.lua): a ring about every 6 m and the 4 corner rails. The first ring's corners
+  -- wire tunnel i (see world.lua): a ring about every 8 m and the 4 corner rails. The first ring's corners
   -- are transformed, the others are steps along the tunnel (the transform is linear)
   function S.tube(i, pat)
     local W = flight.W
@@ -33,7 +33,7 @@ return function(tr, seg3, VX, VY, VZ, CX, CY, F, basis, R)
     VX[3], VY[3], VZ[3] = cx + ax + bx, cy + ay + by, cz + az + bz
     VX[4], VY[4], VZ[4] = cx + bx, cy + by, cz + bz
     VX[5], VY[5], VZ[5] = cx + dx, cy + dy, cz + dz
-    local n = floor(l / 6 + 0.5)
+    local n = floor(l / 8 + 0.5)
     if n < 1 then n = 1 end
     local dx, dy, dz = (VX[5] - VX[1]) / n, (VY[5] - VY[1]) / n, (VZ[5] - VZ[1]) / n
     if not (l > 0) then n = 0 end

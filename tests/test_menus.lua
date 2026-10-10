@@ -107,15 +107,15 @@ T.test("after an update each module is recompiled once, so an old .luac can't ou
   end
   local h = T.H.new({ sd = "t_stamp", files = { [B] = "v9-1\n" } })
   fly(h)
-  T.eq(modes(h), "config:btc menus:btc flight:btc map_city:btc world:btc render:btc solid:btc")
+  T.eq(modes(h), "config:btc menus:btc flight:btc map_city:btc world:btc render:btc solid:btc wire:btc")
   local f = h.S.realio.open(h.S.sdroot .. C, "rb")
   local done = f:read("*a")
   f:close()
-  T.eq(done, "v9-1\nconfig\nmenus\nflight\nmap_city\nworld\nrender\nsolid\n")
+  T.eq(done, "v9-1\nconfig\nmenus\nflight\nmap_city\nworld\nrender\nsolid\nwire\n")
   -- next start, same build: the .luac files are used
   local h2 = T.H.new({ sd = "t_stamp2", files = { [B] = "v9-1\n", [C] = done } })
   fly(h2)
-  T.eq(modes(h2), "config:bt menus:bt flight:bt map_city:bt world:bt render:bt solid:bt")
+  T.eq(modes(h2), "config:bt menus:bt flight:bt map_city:bt world:bt render:bt solid:bt wire:bt")
   -- a new build: recompiled again
   local h3 = T.H.new({ sd = "t_stamp3", files = { [B] = "v9-2\n", [C] = done } })
   T.eq(modes(h3), "config:btc menus:btc")
