@@ -1,9 +1,7 @@
 local T = dofile("tests/t.lua")
 
 local function toTitle(h)
-  h.wait(10)
-  h.step(0, 0, -1024, 0, "enter")
-  h.wait(8)
+  h.wait(10) -- the game starts on the title (no warning screen any more)
   T.eq(h.app.state(), 2)
 end
 

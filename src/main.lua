@@ -20,12 +20,12 @@ end
 local config = use("config")
 local menus, flight, render
 
-local WARN, TITLE, SETTINGS, ARM, FLY, PAUSE, CRASH = 1, 2, 3, 4, 5, 6, 7
+local TITLE, SETTINGS, ARM, FLY, PAUSE, CRASH = 2, 3, 4, 5, 6, 7 -- (1 was the RF warning)
 
-local state, last, acc = WARN, 0, 0
+local state, last, acc = TITLE, 0, 0
 local ignoreUntil = 0
 local eatEnter = false -- the ENTER release that follows a long press
-local saveOk, modelName = true, nil
+local saveOk = true
 local count = 0 -- ticks spent in ARM (throttle low) / CRASH
 local psel = 1 -- pause menu: 1 resume, 2 respawn, 3 quit
 local ail, ele, thr, rud = 0, 0, -1024, 0
@@ -94,9 +94,7 @@ local function readSticks()
 end
 
 local function update(e, steps)
-  if state == WARN then
-    if isEnter(e) then go(TITLE) elseif isExit(e) then return 1 end
-  elseif state == TITLE then
+  if state == TITLE then
     if isLong(e) then
       killEvents(e)
       eatEnter = true
@@ -143,8 +141,7 @@ local PAUSE_ITEMS = { "> RESUME", "> RESPAWN", "> QUIT" }
 
 local function draw()
   lcd.clear()
-  if state == WARN then menus.warn(modelName)
-  elseif state == TITLE then menus.title()
+  if state == TITLE then menus.title()
   elseif state == SETTINGS then menus.settings()
   else
     render.fps = frameTicks > 0 and 100 / frameTicks or 0
@@ -158,10 +155,6 @@ end
 local function init()
   config.load()
   saveOk = config.save()
-  if model and model.getInfo then
-    local ok, info = pcall(model.getInfo)
-    if ok and info and info.name and info.name ~= "" then modelName = string.upper(string.sub(info.name, 1, 11)) end
-  end
   menuMode()
   last = getTime()
   ignoreUntil = last + 40

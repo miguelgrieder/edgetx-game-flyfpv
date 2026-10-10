@@ -1,4 +1,4 @@
--- Menu group (never loaded while flying): RF warning, title, settings.
+-- Menu group (never loaded while flying): title, settings.
 local use = ...
 local config = use("config")
 
@@ -20,15 +20,6 @@ local function boxed(y, s)
 end
 
 local function rule() lcd.drawLine(8, 18, 119, 18, DOTTED, FORCE) end
-
-function M.warn(modelName)
-  center(2, "RF WARNING", DBLSIZE)
-  rule()
-  center(22, "RADIO KEEPS SENDING")
-  center(31, "STICKS TO " .. (modelName or "YOUR MODEL"))
-  center(40, "DISARM / POWER OFF")
-  boxed(51, "[ENT] I KNOW")
-end
 
 -- text shown in the settings list
 function M.label(it)
@@ -53,6 +44,7 @@ end
 function M.title()
   local v = config.v
   center(3, "FREEFPV", DBLSIZE)
+  lcd.drawText(127, 0, config.VERSION, SMLSIZE + RIGHT)
   center(21, M.saveOk and config.MAPS[v.MAP] .. "  " .. config.QUADS[v.QUAD].name .. "  " .. (v.MODE == 2 and "ANGLE" or "ACRO")
     or "NO SAVE")
   -- a little horizon with a quad crosshair

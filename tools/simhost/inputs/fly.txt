@@ -1,6 +1,5 @@
-# warning -> title -> arm (throttle low) -> climb -> pitch forward -> roll -> cut throttle (crash) -> respawn
+# title -> arm (throttle low) -> climb -> pitch forward -> roll -> cut throttle (crash) -> respawn
 0     0 0 -1024 0
-1200  0 0 -1024 0 enter
 2400  0 0 -1024 0 enter
 4000  0 0 -500 0
 5500  0 300 -650 0

@@ -1,8 +1,8 @@
--- shared scenario helpers. Frames 1..39: warning (ENT at 10) -> title (ENT at 20) -> throttle low -> flying
+-- shared scenario helpers. Frames 1..39: title (ENT at 20) -> throttle low -> flying
 local M = {}
 M.FLY = 40 -- first frame that is surely flying
 function M.menu(f)
-  if f == 10 or f == 20 then return 0, 0, -1024, 0, "enter" end
+  if f == 20 then return 0, 0, -1024, 0, "enter" end
   return 0, 0, -1024, 0
 end
 -- run fn(t) once flying (t = frames since FLY)

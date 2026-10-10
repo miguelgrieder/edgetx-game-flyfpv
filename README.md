@@ -1,4 +1,4 @@
-# FreeFPV
+# FreeFPV (v1.4)
 
 An FPV **acro trainer** for **EdgeTX radios with a 128×64 black & white screen** (Radiomaster TX12 / TX12 MK2 /
 Boxer / Pocket / GX12 / Zorro, Jumper T-Pro / T-Lite / T20 — the `PCB=X7` family).
@@ -25,16 +25,15 @@ rolls, inverted flight, all of it. A small wireframe world with fixed obstacles;
 The radio compiles each file the first time it is used (a `.luac` appears next to it), so the first launch and
 the first flight take a moment. When updating, delete the old `.luac` files or copy everything again.
 
-## RF warning
+## Safety
 
-The radio **keeps transmitting your sticks to the bound model while you play**. Disarm, better power the model
-off, before pressing ENT on the first screen.
+The radio **keeps transmitting your sticks to the bound model while you play** (there is no warning screen):
+disarm, better power the model off, before starting FreeFPV.
 
 ## Controls
 
 | where | input | action |
 |---|---|---|
-| warning | ENT / RTN | continue / exit |
 | title | ENT · hold ENT · RTN | fly · settings · exit |
 | arming | throttle | **throttle low to arm** (like a real quad); RTN back to the title |
 | flying | sticks | Ail = roll, Ele = pitch, Rud = yaw, Thr = thrust; RTN = pause |

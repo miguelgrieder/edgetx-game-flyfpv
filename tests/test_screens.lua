@@ -3,7 +3,7 @@
 local T = dofile("tests/t.lua")
 local FB = T.H.mock.FB
 
-local SCREENS = { "00_warning", "01_title", "02_settings_p1", "03_settings_p2", "04_settings_p3", "05_arm",
+local SCREENS = { "01_title", "02_settings_p1", "03_settings_p2", "04_settings_p3", "05_arm",
   "06_fly_field", "07_fly_city_angle", "08_fly_gates_whoop", "09_fly_poles_flip", "10_pause", "11_crash",
   "12_debug_no_hud" }
 local approve = os.getenv("APPROVE") == "1"
