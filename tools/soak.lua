@@ -6,7 +6,7 @@ local frames = tonumber(arg[1]) or 600
 local out = io.stdout
 local maxCalls, total, crashes = 0, 0, 0
 local mem0
-for map = 1, 4 do
+for map = 1, 9 do
   for quad = 1, 5, 2 do
     for crash = 0, 1 do
       local h = H.new({ sd = "soak", setup = H.cfg("MAP=" .. map .. "\nQUAD=" .. quad .. "\nCRASH=" .. crash .. "\n") })
@@ -34,5 +34,5 @@ end
 collectgarbage("collect")
 local growth = collectgarbage("count") - mem0
 out:write(string.format("soak: %d frames, %d maps x 3 quads x crash on/off, max draw calls %d, crashes seen %d, memory %+.1f KB\n",
-  total, 4, maxCalls, crashes, growth))
+  total, 9, maxCalls, crashes, growth))
 if maxCalls > 420 or growth > 50 then out:write("FAIL\n") os.exit(1) end
