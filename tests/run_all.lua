@@ -1,6 +1,6 @@
 -- lua5.2 tests/run_all.lua [name ...]  (run from the repo root)
 local T = dofile("tests/t.lua")
-local files = { "test_rates", "test_physics", "test_render", "test_world", "test_menus", "test_screens" }
+local files = { "test_rates", "test_physics", "test_render", "test_world", "test_menus", "test_color", "test_screens" }
 if arg[1] then files = arg end
 local fails = 0
 for _, f in ipairs(files) do

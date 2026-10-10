@@ -1,4 +1,4 @@
-# FlyFPV (v0.1.1)
+# FlyFPV (v0.1.2)
 
 An FPV **acro trainer** for **EdgeTX radios with a 128×64 black & white screen** (Radiomaster TX12 / TX12 MK2 /
 Boxer / Pocket / GX12 / Zorro, Jumper T-Pro / T-Lite / T20 — the `PCB=X7` family).
@@ -149,6 +149,7 @@ New golden after an intended visual change: `APPROVE=1 lua5.2 tests/run_all.lua 
 |---|---|---|---|
 | GX12 | ✓ all tests | ✓ fly, crash, settings; 6 screens pixel-identical to the mock | not yet |
 | TX12, Boxer, Pocket | (same target) | ✓ fly scenario, no errors | not yet |
+| colour screens (TX15) | (scaling self-test) | – | runs; drawn 3x and centred in black on white by `src/color.lua` (being tuned) |
 
 MIT license.
 
