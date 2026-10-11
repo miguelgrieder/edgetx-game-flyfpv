@@ -7,7 +7,7 @@ local H = dofile("tools/harness.lua")
 local maps = { ... }
 local cli = arg and arg[0] and arg[0]:find("mapcost") -- from the command line, or dofile'd by a test
 if #maps == 0 then
-  maps = { "map_city", "map_metro", "map_space", "map_oval", "map_tech", "map_sky" }
+  maps = { "map_city", "map_metro", "map_space", "map_oval", "map_tech", "map_sky", "map_mega" }
 end
 
 local function scan(name)
@@ -25,7 +25,7 @@ local function scan(name)
     if W.y2[i] > y2 then y2 = W.y2[i] end
   end
   local worst, wlcd, sum, n, wpose, lpose = 0, 0, 0, 0, "", ""
-  local count
+  local count = 0
   debug.sethook(function() count = count + 1 end, "", 1000)
   for x = x1 - 5, x2 + 5, 8 do
     for y = y1 - 5, y2 + 5, 8 do
