@@ -15,7 +15,8 @@ M.NEAR = 0.05 -- near plane (m)
 M.FAR = flight.far or 120 -- objects farther than this are skipped (m); a map can see less (map.far)
 M.SOLID_D = 40 -- nearer than this: solid lines, farther: dotted
 M.GRID_N = 3 -- grid lines each side of the quad (farther lines pile up at the horizon)
-M.BUDGET = 400 -- max lcd calls per frame for the 3D view (edges + fill rows)
+M.BUDGET = flight.budget or 400 -- max lcd calls per frame for the 3D view (edges + fill rows); a map for
+-- faster radios can allow more (map.budget)
 local CX, CY, F, NEAR = 64, 32, M.F, M.NEAR
 -- (the hottest lines write these as numbers, 64 32 40 0.05: in Lua an upvalue costs an instruction each
 -- time it is read, a number in the code nothing)

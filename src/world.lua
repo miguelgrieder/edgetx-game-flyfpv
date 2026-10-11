@@ -7,7 +7,8 @@
 -- square of horizontal poles at a third, two thirds and the top), tube = {x, y, z, axis, length, side, ...}, roof = {x, y, z, side,
 -- hole, ...}, sky = "day" | "night", stars = count (night), clouds = {azimuth, elevation, size, ...} and
 -- sun = {azimuth, elevation} (day; degrees, azimuth clockwise from north), far = view distance in m
--- (default render.FAR: big maps see less, draw less) }
+-- (default render.FAR: big maps see less, draw less), budget = lcd calls per frame (default render.BUDGET:
+-- a map made for faster radios can allow more) }
 -- (the tables are built once here, when the map loads; nothing is allocated while flying)
 local use = ...
 local config = use("config")
@@ -179,6 +180,7 @@ return function(M, map)
   end
   M.grid = map.grid or 10
   M.far = map.far
+  M.budget = map.budget
   local s = map.spawn or { 0, 0, 0 }
   M.sx, M.sy, M.sh = s[1], s[2], s[3]
 end
