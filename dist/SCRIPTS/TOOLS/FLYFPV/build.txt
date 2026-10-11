@@ -1,4 +1,4 @@
-v0.1.2-1ccf05f1
+v0.1.2-d92ecc42
 color
 config
 items
@@ -15,3 +15,4 @@ map_space
 map_oval
 map_tech
 map_sky
+map_mega

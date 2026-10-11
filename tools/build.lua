@@ -2,7 +2,7 @@
 -- header) and every other module goes to SCRIPTS/TOOLS/FLYFPV/<name>.lua, loaded with loadScript.
 -- Each file compiles on its own on the radio (one big file runs out of memory while compiling).
 local MODULES = { "color", "config", "items", "menus", "flight", "render", "solid", "world", "wire", "sky", "map_city",
-  "map_metro", "map_space", "map_oval", "map_tech", "map_sky" }
+  "map_metro", "map_space", "map_oval", "map_tech", "map_sky", "map_mega" }
 local OUT = "dist/SCRIPTS/TOOLS/"
 
 local function read(path)

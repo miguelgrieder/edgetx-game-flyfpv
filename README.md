@@ -84,6 +84,7 @@ Sticks are read by function (`ail`, `ele`, `thr`, `rud`), so your radio's own st
 | T_OVAL | race: fast 50 × 150 m loop; gates, a tunnel on the west straight, a floating ring on the east one; a start gantry with start lights, a control tower of poles with its cab, floodlights |
 | T_TECH | race: slalom, gates, under a low bridge, up through a chimney (enter from below), down through a roof's hole, back through a tunnel; a low limbo bar, a frame of poles to thread between its floors |
 | T_SKY | race in the air: rings climbing north, a high tunnel, a chimney to dive down (exit under it), a roof hole to fly up through, platforms; a high wire between two masts, a square hoop, a scaffold of poles to dive through |
+| MEGA | for TX15-class colour radios (a GX12 may run out of memory): a whole city round the Grand Boulevard and its gates; downtown towers with stepped tops, spires and skybridges, an elevated train loop with a station and a train, a suspension bridge to a lighthouse island, a harbour (ship, container cranes, stacks), a stadium, a building site with cranes, a 135 m mega tower, a park |
 
 Tunnels, rings and chimneys are see-through wire (like gates); their walls still stop you. Every map's busiest view
 costs about the same as CITY's (a test checks it with `tools/mapcost.lua`).
@@ -103,7 +104,7 @@ bottom left.
 
 | setting | range | default |
 |---|---|---|
-| MAP | CITY / METRO / SPACE / T_OVAL / T_TECH / T_SKY (T_ = race tracks) | CITY |
+| MAP | CITY / METRO / SPACE / T_OVAL / T_TECH / T_SKY / MEGA (T_ = race tracks) | CITY |
 | SKY | AUTO (the map's own) / DAY (clouds and a sun) / NIGHT (stars) / OFF (a little faster) | OFF (a sky needed more memory than a Pocket has) |
 | QUAD | WHOOP / 2.5IN / 3IN / 3.5IN / 5IN (also sets CAMERA ANGLE) | 5IN |
 | MODE | ACRO / ANGLE | ACRO |
@@ -128,7 +129,7 @@ A map is a small file `src/map_<name>.lua` returning a table (all in metres; x e
 fly through northward), `tube = {x, y, z, axis, length, side, ...}` (wire tunnel; axis 0 runs north, 1 east, 2 up =
 chimney; length 0 = a ring), `roof = {x, y, height, side, hole, ...}` (on 4 corner poles), `hpole = {x, y, z, axis, length, ...}` (a horizontal pole, one line; axis 0 along x, 1 along y),
 `frame = {x, y, width, depth, height, ...}` (corner poles with a square of beams at 1/3, 2/3 and the top), `stars = count`,
-`far = view distance`, `grid`, `spawn = {x, y, heading}`. Add it to `MAPS`/`MAPFILE` in `config.lua` and to
+`far = view distance`, `budget = lcd calls per frame` (default 400; more for maps made for fast radios), `grid`, `spawn = {x, y, heading}`. Add it to `MAPS`/`MAPFILE` in `config.lua` and to
 `tools/build.lua`.
 
 | command (Lua 5.2; on Windows `lua52.exe`) | what |

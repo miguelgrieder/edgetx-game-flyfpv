@@ -1,6 +1,6 @@
 local T = dofile("tests/t.lua")
 
-local MAPS = { "map_city", "map_metro", "map_space", "map_oval", "map_tech", "map_sky" }
+local MAPS = { "map_city", "map_metro", "map_space", "map_oval", "map_tech", "map_sky", "map_mega" }
 
 local function setup(mapfile, cfg)
   local h = T.H.new({ sd = "t_world" })
@@ -196,13 +196,15 @@ end)
 -- Budget from the radio: v2.2's CITY (worst view in this scan ~31k instructions, ~240 lcd calls) still had
 -- great FPS on a GX12. No map may cost more than ~25 % over that in its worst view (tools/mapcost.lua).
 -- SKY OFF in the settings takes the sky's part (~10 %) away. METRO draws all its blocks (asked for over the
--- FPS), so it gets more, up to render's line budget.
-T.test("no map's worst view costs more than 40k instructions or 300 lcd calls (METRO 60k, 400)", function()
+-- FPS), so it gets more, up to render's line budget. MEGA is for TX15-class radios (~5x a GX12's CPU by
+-- DMIPS): about CITY's frame rate there means ~180k, and it allows 1200 lcd calls (map.budget).
+T.test("no map's worst view costs more than 40k instructions or 300 lcd calls (METRO 60k, 400; MEGA 180k, 1200)", function()
   local scan = dofile("tools/mapcost.lua")
   for _, m in ipairs(MAPS) do
     local i, l = scan(m)
     local bi, bl = 40, 300
     if m == "map_metro" then bi, bl = 60, 400 end
+    if m == "map_mega" then bi, bl = 180, 1200 end
     T.ok(i <= bi and l <= bl, m .. ": " .. i .. "k instructions, " .. l .. " lcd calls (budget " .. bi .. "k, " .. bl .. ")")
   end
 end)

@@ -5,8 +5,8 @@ local M = {}
 M.VERSION = "v0.1.2" -- shown on the title screen
 M.FILE = "/SCRIPTS/TOOLS/FLYFPV/flyfpv.cfg"
 
-M.MAPS = { "CITY", "METRO", "SPACE", "T_OVAL", "T_TECH", "T_SKY" } -- T_: race tracks
-M.MAPFILE = { "map_city", "map_metro", "map_space", "map_oval", "map_tech", "map_sky" }
+M.MAPS = { "CITY", "METRO", "SPACE", "T_OVAL", "T_TECH", "T_SKY", "MEGA" } -- T_: race tracks
+M.MAPFILE = { "map_city", "map_metro", "map_space", "map_oval", "map_tech", "map_sky", "map_mega" }
 
 -- quad types: thrust/weight, top speed (m/s), linear drag (1/s), rate response lag (s),
 -- collision radius (m), default camera angle (deg), bounces off obstacles (ducted)

@@ -4,7 +4,7 @@
 local out = assert(io.open(arg[1], "wb"))
 local STEP = tonumber(arg[2] or "14") -- metres between sampled positions
 local H = dofile("tools/harness.lua")
-local maps = { "map_city", "map_metro", "map_space", "map_oval", "map_tech", "map_sky" }
+local maps = { "map_city", "map_metro", "map_space", "map_oval", "map_tech", "map_sky", "map_mega" }
 for _, name in ipairs(maps) do
   local h = H.new({ sd = "samepix" })
   local c, f = h.config, h.flight

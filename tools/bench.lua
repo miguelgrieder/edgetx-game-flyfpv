@@ -6,7 +6,7 @@ local out = io.stdout
 local H = dofile("tools/harness.lua")
 local maps = { ... }
 if #maps == 0 then
-  maps = { "map_city", "map_metro", "map_space", "map_oval", "map_tech", "map_sky" }
+  maps = { "map_city", "map_metro", "map_space", "map_oval", "map_tech", "map_sky", "map_mega" }
 end
 local stub = math.max
 
