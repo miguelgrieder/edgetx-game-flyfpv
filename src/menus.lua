@@ -6,6 +6,7 @@ local M = {}
 
 M.saveOk = true
 M.sel, M.editing = 1, false
+M.confirm = false -- RESET ALL asked once, waiting for the second ENT
 M.tsel = 1 -- the title's menu: 1 FLY, 2 SETTINGS, 3 EXIT
 
 local function center(y, s, flags)
@@ -29,6 +30,7 @@ function M.label(it)
   if it.key == "CAMERA" then return v .. " DEG" end
   if it.key == "VIEW" or it.key == "LIMIT" then return v == 0 and "AUTO" or v .. (it.key == "VIEW" and " M" or "") end
   if it.key == "SOLID_D" then return v .. " M" end
+  if it.action == "reset" then return M.confirm and "ENT: SURE?" or "" end
   if it.key == "SIM_SPEED" then return math.floor(v / 10) .. "." .. v % 10 .. "X" end
   if it.key == "RP_EXPO" or it.key == "Y_EXPO" then return math.floor(v / 100) .. "." .. (v < 10 and "0" or "") .. v % 100 end
   if it.names then return it.names[v - it.lo + 1] end
@@ -63,6 +65,7 @@ end
 M.MENU = {} -- config items + EXIT
 local items = config.items()
 for i = 1, #items do M.MENU[i] = items[i] end
+M.MENU[#M.MENU + 1] = { name = "RESET ALL", action = "reset" } -- every setting back to its default
 M.MENU[#M.MENU + 1] = { name = "EXIT", action = "exit" }
 local PAGES = math.ceil(#M.MENU / 5)
 
@@ -76,7 +79,7 @@ function M.settings()
     local i = (page - 1) * 5 + row
     local it, y = M.MENU[i], 2 + row * 10
     if not it then break end
-    local val = it.key and M.label(it) or ""
+    local val = (it.key or it.action == "reset") and M.label(it) or ""
     if i == sel and M.editing then val = "<" .. val .. ">" end
     lcd.drawText(4, y, it.name, 0)
     lcd.drawText(74, y, val, 0)
@@ -96,12 +99,18 @@ function M.settingsEvent(e)
     elseif e == "enter" or e == "exit" then M.editing = false end
     return false
   end
+  local ask = false
   if e == "next" then M.sel = M.sel % #M.MENU + 1
   elseif e == "prev" then M.sel = (M.sel - 2) % #M.MENU + 1
-  elseif e == "exit" then return true
+  elseif e == "exit" then M.confirm = false return true
   elseif e == "enter" then
-    if it.key then M.editing = true else return true end
+    if it.key then M.editing = true
+    elseif it.action == "reset" then
+      -- the second ENT resets (saved when the menu is left): a stray press can't wipe them
+      if M.confirm then config.defaults() else ask = true end
+    else return true end
   end
+  M.confirm = ask
   return false
 end
 

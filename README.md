@@ -122,6 +122,7 @@ bottom left.
 | GRID | OFF / ON / DENSE (half the spacing): the ground grid | ON |
 | HORIZON | FLAT / LOW / MID / HIGH: the lens curve of the horizon | MID |
 | LINE LIMIT | AUTO (the map's: 400, MEGA 1200) / 50–1200 lcd calls per frame: lower keeps the frame rate steady in busy views but can leave out near objects | AUTO |
+| RESET ALL | ENT, then ENT again: every setting back to its default | |
 
 ## Development
 

@@ -58,6 +58,26 @@ T.test("title menu: FLY by default, scroll to SETTINGS or EXIT and press ENT", f
   T.eq(h.step(0, 0, -1024, 0, "enter"), 1) -- the tool closes
 end)
 
+T.test("RESET ALL: one ENT asks, a second puts every setting back to its default; moving away cancels", function()
+  local h = T.H.new({ sd = "t_reset" })
+  toSettings(h)
+  h.config.v.QUAD, h.config.v.FOV, h.config.v.VIEW = 2, 1, 200
+  h.menus.sel = #h.menus.MENU - 1 -- RESET ALL
+  T.eq(h.menus.MENU[h.menus.sel].action, "reset")
+  h.step(0, 0, -1024, 0, "enter")
+  T.eq(h.menus.confirm, true) T.eq(h.config.v.QUAD, 2) -- only asked
+  h.step(0, 0, -1024, 0, "next") -- moving away cancels
+  T.eq(h.menus.confirm, false)
+  h.step(0, 0, -1024, 0, "prev")
+  h.step(0, 0, -1024, 0, "enter")
+  h.step(0, 0, -1024, 0, "enter")
+  T.eq(h.config.v.QUAD, 5) T.eq(h.config.v.FOV, 4) T.eq(h.config.v.VIEW, 0) T.eq(h.menus.confirm, false)
+  h.step(0, 0, -1024, 0, "exit")
+  local f = h.S.realio.open(h.S.sdroot .. "/SCRIPTS/TOOLS/FLYFPV/flyfpv.cfg", "rb")
+  T.ok(f:read("*a"):find("QUAD=5"), "saved")
+  f:close()
+end)
+
 T.test("corrupted settings are ignored line by line", function()
   local h = T.H.new({ sd = "t_menus3", setup = T.H.cfg("garbage\nMAP=99\nQUAD=2\nRP_MAX=675\nMODE=2\n") })
   T.eq(h.config.v.MAP, 1) T.eq(h.config.v.QUAD, 2) T.eq(h.config.v.RP_MAX, 670) T.eq(h.config.v.MODE, 2)
