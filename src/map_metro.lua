@@ -3,7 +3,7 @@
 -- two blocks joined by a walkway, a stepped Empire State with a spire across Broadway from a roof with a
 -- hole, the Chrysler further north. The Brooklyn Bridge runs east from the east avenue: two towers of
 -- poles with thin bars across and suspenders along the deck, and beside it a small park with trees, a
--- fountain and a chimney to fly up through, poles behind it. The Statue of Liberty
+-- fountain and a chimney on four legs to fly up through. The Statue of Liberty
 -- stands off to the south-west on her star base: pedestal, robe, crowned head, torch held up, tablet.
 -- Every block is drawn, like the other maps (its worst view costs more than CITY's).
 -- box = x, y, width (x), depth (y), height; fbox = x, y, bottom, w, d, h; tube = x, y, z, axis, length, side;
@@ -41,5 +41,5 @@ return {
   tube = { 44, 38, 3, 2, 8, 4 },                                   -- the park's chimney
   pole = { 50, 13.6, 20, 50, 18.4, 20, 70, 13.6, 20, 70, 18.4, 20,  -- bridge towers
     44, 30, 2.5, 52, 38, 2.5,                                         -- tree trunks
-    41, 42, 8, 43, 42, 11, 45, 42, 11, 47, 42, 8 },                 -- poles behind the chimney
+    41.9, 35.9, 3, 46.1, 35.9, 3, 41.9, 40.1, 3, 46.1, 40.1, 3 },   -- the chimney's legs
 }
