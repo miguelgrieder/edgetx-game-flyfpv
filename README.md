@@ -79,7 +79,7 @@ Sticks are read by function (`ail`, `ele`, `thr`, `rud`), so your radio's own st
 | MAP | what's there |
 |---|---|
 | CITY | blocks with 8 m streets and a square in the middle, a gate at the entrance; a tunnel in the street between two blocks, a roof with a hole on four poles where a block was, a chimney held in the air by four poles on top of a tower (fly in under it), a pole on top of a 60 m tower, a walkway between two buildings |
-| METRO | Manhattan: start at the southern tip facing up Broadway; twin 60 m towers standing diagonally (a pole on one), a stepped Empire State and a Chrysler with spires, a roof with a hole and a chimney, two blocks joined by a walkway, a pedestrian tunnel between two blocks, the Brooklyn Bridge (stairs, towers, suspenders) with a small park beside it, the Statue of Liberty (crown, torch, tablet) |
+| METRO | Manhattan: start at the southern tip facing up Broadway; twin 60 m towers standing diagonally (a pole on one), a stepped Empire State and a Chrysler with spires, a roof with a hole and a chimney, two blocks joined by a walkway, the Brooklyn Bridge (towers of poles, suspenders) with a small park beside it, the Statue of Liberty (crown, torch, tablet) |
 | SPACE | starry sky over a wide grid; floating blocks, a station, platforms, poles, tunnels, rings and a chimney at every height; a roof with a hole on tall poles |
 | T_OVAL | race: fast 50 × 150 m loop; gates, a tunnel on the west straight, a floating ring on the east one |
 | T_TECH | race: slalom, gates, under a low bridge, up through a chimney (enter from below), down through a roof's hole, back through a tunnel |
