@@ -1,13 +1,12 @@
 -- METRO: a bigger city, 4 x 4 blocks 32 m apart (wide avenues at x = -32, 0, 32 and streets every 32 m
 -- north). In the middle a plaza with a roof on four poles: a hole to fly up through and a chimney above it.
--- A bridge over the main avenue, a subway tunnel under the east avenue, lamp posts, gates. Blocks past
--- 36 m are not drawn (far) to keep it as fast as CITY.
+-- A bridge over the main avenue, a subway tunnel under the east avenue, lamp posts, gates. Every block
+-- is drawn, like the other maps (its worst view costs more than CITY's).
 -- box = x, y, width (x), depth (y), height; fbox = x, y, bottom, w, d, h; tube = x, y, z, axis, length, side;
 -- roof = x, y, height, side, hole; pole = x, y, height; gate = x, y, axis (0 spans x, 1 spans y)
 return {
   grid = 16,
   spawn = { 0, 0, 0 },
-  far = 36,
   sky = "night",
   box = {
     -48, 24, 16, 16, 10, -16, 24, 14, 16, 22, 16, 24, 16, 12, 6, 48, 24, 16, 16, 16,

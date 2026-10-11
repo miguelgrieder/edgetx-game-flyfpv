@@ -79,7 +79,7 @@ Sticks are read by function (`ail`, `ele`, `thr`, `rud`), so your radio's own st
 | MAP | what's there |
 |---|---|
 | CITY | blocks with 8 m streets and a square in the middle, a gate at the entrance; a tunnel in the street between two blocks, a roof with a hole on four poles where a block was, a chimney held in the air by four poles on top of a tower (fly in under it), a pole on top of a 60 m tower, a walkway between two buildings |
-| METRO | a bigger city: 14 blocks 32 m apart; a plaza with a roof on four poles (a hole to fly up through, a chimney above it), a bridge over the main avenue, a subway tunnel, lamp posts, gates. Blocks past 36 m are not drawn |
+| METRO | a bigger city: 14 blocks 32 m apart; a plaza with a roof on four poles (a hole to fly up through, a chimney above it), a bridge over the main avenue, a subway tunnel, lamp posts, gates |
 | SPACE | starry sky over a wide grid; floating blocks, a station, platforms, poles, tunnels, rings and a chimney at every height; a roof with a hole on tall poles |
 | T_OVAL | race: fast 50 × 150 m loop; gates, a tunnel on the west straight, a floating ring on the east one |
 | T_TECH | race: slalom, gates, under a low bridge, up through a chimney (enter from below), down through a roof's hole, back through a tunnel |

@@ -180,12 +180,15 @@ end)
 
 -- Budget from the radio: v2.2's CITY (worst view in this scan ~31k instructions, ~240 lcd calls) still had
 -- great FPS on a GX12. No map may cost more than ~25 % over that in its worst view (tools/mapcost.lua).
--- SKY OFF in the settings takes the sky's part (~10 %) away.
-T.test("no map's worst view costs more than 40k instructions or 300 lcd calls", function()
+-- SKY OFF in the settings takes the sky's part (~10 %) away. METRO draws all its blocks (asked for over the
+-- FPS), so it gets more, up to render's line budget.
+T.test("no map's worst view costs more than 40k instructions or 300 lcd calls (METRO 60k, 400)", function()
   local scan = dofile("tools/mapcost.lua")
   for _, m in ipairs(MAPS) do
     local i, l = scan(m)
-    T.ok(i <= 40 and l <= 300, m .. ": " .. i .. "k instructions, " .. l .. " lcd calls (budget 40k, 300)")
+    local bi, bl = 40, 300
+    if m == "map_metro" then bi, bl = 60, 400 end
+    T.ok(i <= bi and l <= bl, m .. ": " .. i .. "k instructions, " .. l .. " lcd calls (budget " .. bi .. "k, " .. bl .. ")")
   end
 end)
 
