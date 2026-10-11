@@ -96,6 +96,12 @@ T.test("floating boxes and poles, tunnels, chimneys, roofs and stars build their
   T.near(W.mx[7], -4) T.near(W.my[7], -16)
   -- then the hidden tunnel walls; the chimney's (third tunnel) stand from 0 to 8
   T.eq(W.kind[11], 0) T.eq(W.z1[19], 0) T.eq(W.z2[19], 8) T.eq(W.kind[19], 0)
+  -- a horizontal pole: 0.2 m thick, kind 3, along x or y
+  local _, f2 = setupMap({ hpole = { 0, 10, 5, 0, 6, 3, 20, 4, 1, 8 } })
+  local W2 = f2.W
+  T.eq(W2.nb, 2) T.eq(W2.kind[1], 3) T.eq(W2.kind[2], 3)
+  T.near(W2.x1[1], -3) T.near(W2.x2[1], 3) T.near(W2.y1[1], 9.9) T.near(W2.z2[1], 5.1)
+  T.near(W2.y1[2], 16) T.near(W2.y2[2], 24) T.near(W2.x1[2], 2.9)
   for k = 1, 20 do
     local x, y, z = W.sx[k], W.sy[k], W.sz[k]
     T.near(x * x + y * y + z * z, 1, 1e-9)

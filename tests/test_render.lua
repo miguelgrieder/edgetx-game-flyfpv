@@ -114,3 +114,20 @@ T.test("geometry never compares a float with == / ~= against a number (EdgeTX 2.
     end
   end
 end)
+
+T.test("a horizontal pole is one line, along x or along y", function()
+  for _, a in ipairs({ 0, 1 }) do
+    local h = T.H.new({ sd = "t_render_h" })
+    local c, f, r = h.config, h.flight, h.render
+    c.defaults() c.v.CAMERA, c.v.HUD = 0, 0
+    -- 5 m above the camera, 20 m ahead: across the view (axis 0), or running away from it (axis 1)
+    f.load({ grid = 10, spawn = { 0, 0, 0 }, hpole = { 0, 20, 7.03, a, a == 0 and 6 or 8 } })
+    f.setup() f.spawn()
+    f.pz, f.ground = 2, false
+    lcd.clear()
+    local n = r.draw(0)
+    f.load({ grid = 10, spawn = { 0, 0, 0 } })
+    lcd.clear()
+    T.eq(n - r.draw(0), 1, "axis " .. a)
+  end
+end)

@@ -279,6 +279,16 @@ local function objects()
     elseif i < 0 then gate(-i, pat)
     elseif K[i] == 2 then -- int
       vline(MX[i], MY[i], Z1[i], Z2[i], pat) -- pole
+    elseif K[i] == 3 then -- int; a horizontal pole: one line along x or y (a camera axis scaled)
+      local l = X2[i] - X1[i]
+      if l > Y2[i] - Y1[i] then
+        local ax, ay, az = tr(X1[i], MY[i], MZ[i])
+        seg3(ax, ay, az, ax + l * rx, ay + l * ux, az + l * fx, pat)
+      else
+        l = Y2[i] - Y1[i]
+        local ax, ay, az = tr(MX[i], Y1[i], MZ[i])
+        seg3(ax, ay, az, ax + l * ry, ay + l * uy, az + l * fy, pat)
+      end
     elseif RAD[i] * RAD[i] * 1600 < DST[k] then -- F = 40: under a pixel across, so a dot like a pole
       vline(MX[i], MY[i], Z1[i], Z2[i], SOLID) -- (a solid box costs ~1.8k instructions however small)
     else

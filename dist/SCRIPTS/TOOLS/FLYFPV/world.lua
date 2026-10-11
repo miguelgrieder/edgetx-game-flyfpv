@@ -2,7 +2,8 @@
 -- Map format:
 -- { grid, spawn = {x, y, hdg}, box = {x, y, w, d, h, ...},
 -- pole = {x, y, h, ...}, gate = {x, y, axis, ...}, fbox = {x, y, z, w, d, h, ...} (floating box, z = its
--- bottom), fpole = {x, y, z, h, ...}, tube = {x, y, z, axis, length, side, ...}, roof = {x, y, z, side,
+-- bottom), fpole = {x, y, z, h, ...}, hpole = {x, y, z, axis, length, ...} (horizontal, centred on x, y, z;
+-- axis 0 along x, 1 along y), tube = {x, y, z, axis, length, side, ...}, roof = {x, y, z, side,
 -- hole, ...}, sky = "day" | "night", stars = count (night), clouds = {azimuth, elevation, size, ...} and
 -- sun = {azimuth, elevation} (day; degrees, azimuth clockwise from north), far = view distance in m
 -- (default render.FAR: big maps see less, draw less) }
@@ -90,6 +91,12 @@ return function(M, map)
   for i = 1, #p, 3 do box(p[i] - 0.1, p[i + 1] - 0.1, 0, p[i] + 0.1, p[i + 1] + 0.1, p[i + 2], 2) end
   p = map.fpole or {}
   for i = 1, #p, 4 do box(p[i] - 0.1, p[i + 1] - 0.1, p[i + 2], p[i] + 0.1, p[i + 1] + 0.1, p[i + 2] + p[i + 3], 2) end
+  p = map.hpole or {} -- kind 3: drawn as one line, like a pole lying down
+  for i = 1, #p, 5 do
+    local x, y, z, l = p[i], p[i + 1], p[i + 2], p[i + 4] / 2
+    if p[i + 3] == 0 then box(x - l, y - 0.1, z - 0.1, x + l, y + 0.1, z + 0.1, 3) -- int
+    else box(x - 0.1, y - l, z - 0.1, x + 0.1, y + l, z + 0.1, 3) end
+  end
   p = map.tube or {}
   for i = 1, #p, 6 do tube(p[i], p[i + 1], p[i + 2], p[i + 3], p[i + 4], p[i + 5]) end
   p = map.roof or {}
