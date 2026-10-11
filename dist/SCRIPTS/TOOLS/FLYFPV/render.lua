@@ -205,6 +205,29 @@ local function gate(i, pat)
   seg3(ax1 + wx, ay1 + wy, az1 + wz, bx + wx, by + wy, bz + wz, pat)
 end
 
+-- frames: 4 corner poles and a square of beams at a third, two thirds and the top, from one transform
+local function frame(i, pat)
+  local W = flight.W
+  local w, d, h = W.ew[i], W.ed[i], W.eh[i]
+  local ax, ay, az = tr(W.ex[i] - w / 2, W.ey[i] - d / 2, 0) -- south-west foot
+  local wx, wy, wz, dx, dy, dz = w * rx, w * ux, w * fx, d * ry, d * uy, d * fy -- along x, along y
+  local bx, by, bz = ax + wx, ay + wy, az + wz
+  local cx, cy, cz = bx + dx, by + dy, bz + dz
+  local ex, ey, ez = ax + dx, ay + dy, az + dz
+  local hx, hy, hz = h * rz, h * uz, h * fz
+  seg3(ax, ay, az, ax + hx, ay + hy, az + hz, pat)
+  seg3(bx, by, bz, bx + hx, by + hy, bz + hz, pat)
+  seg3(cx, cy, cz, cx + hx, cy + hy, cz + hz, pat)
+  seg3(ex, ey, ez, ex + hx, ey + hy, ez + hz, pat)
+  for f = 1, 3 do
+    local ox, oy, oz = hx * f / 3, hy * f / 3, hz * f / 3
+    seg3(ax + ox, ay + oy, az + oz, bx + ox, by + oy, bz + oz, pat)
+    seg3(bx + ox, by + oy, bz + oz, cx + ox, cy + oy, cz + oz, pat)
+    seg3(cx + ox, cy + oy, cz + oz, ex + ox, ey + oy, ez + oz, pat)
+    seg3(ex + ox, ey + oy, ez + oz, ax + ox, ay + oy, az + oz, pat)
+  end
+end
+
 -- tunnels live in wire.lua and the sky in sky.lua, loaded on the first frame only for maps that have them
 local wire, sky
 local function basis() return rx, ry, rz, ux, uy, uz, fx, fy, fz end
@@ -252,6 +275,14 @@ local function objects()
       ORD[n], DST[n] = -W.ng - i, cx * cx + cy * cy + cz * cz
     end
   end
+  -- frames: after the tunnels (-ng - nt - i)
+  for i = 1, W.ne do
+    local cx, cy, cz = tr(W.ex[i], W.ey[i], W.eh[i] / 2)
+    if visible(cx, cy, cz, W.er[i]) then
+      n = n + 1
+      ORD[n], DST[n] = -W.ng - W.nt - i, cx * cx + cy * cy + cz * cz
+    end
+  end
   -- insertion sort, farthest first (no table library on the radio)
   for i = 2, n do
     local o, d = ORD[i], DST[i]
@@ -272,7 +303,12 @@ local function objects()
       local d = M.SOLID_D + RAD[i]
       pat = DST[k] > d * d and DOTTED or SOLID
     end
-    if i < -W.ng then
+    if i < -W.ng - W.nt then
+      -- a frame: solid by its nearest part
+      local e = -i - W.ng - W.nt
+      local d = M.SOLID_D + W.er[e]
+      frame(e, DST[k] > d * d and DOTTED or SOLID)
+    elseif i < -W.ng then
       -- a tunnel's centre can be far while its near end is close: solid by its nearest part
       local d = M.SOLID_D + W.tl[-i - W.ng] / 2
       wire.tube(-i - W.ng, DST[k] > d * d and DOTTED or SOLID)

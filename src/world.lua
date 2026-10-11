@@ -63,10 +63,11 @@ local function tube(x, y, z, a, l, s)
 end
 
 -- a horizontal pole centred on x, y, z, length l, axis 0 along x, 1 along y: kind 3, drawn as one line
-local function hpole(x, y, z, a, l)
+-- (kind 0: a frame's, hidden: render draws the frame whole)
+local function hpole(x, y, z, a, l, kind)
   l = l / 2
-  if a == 0 then box(x - l, y - 0.1, z - 0.1, x + l, y + 0.1, z + 0.1, 3) -- int
-  else box(x - 0.1, y - l, z - 0.1, x + 0.1, y + l, z + 0.1, 3) end
+  if a == 0 then box(x - l, y - 0.1, z - 0.1, x + l, y + 0.1, z + 0.1, kind or 3) -- int
+  else box(x - 0.1, y - l, z - 0.1, x + 0.1, y + l, z + 0.1, kind or 3) end
 end
 
 -- a roof with a square hole: side s, hole side o, 0.3 m thick at height z, on 4 poles at its corners
@@ -84,7 +85,7 @@ end
 
 return function(M, map)
   W = M.W
-  W.nb, W.ng, W.nt, W.ns, nh = 0, 0, 0, 0, 0
+  W.nb, W.ng, W.nt, W.ns, W.ne, nh = 0, 0, 0, 0, 0, 0
   local b = map.box or {}
   for i = 1, #b, 5 do
     local x, y, w, d, h = b[i], b[i + 1], b[i + 2] / 2, b[i + 3] / 2, b[i + 4]
@@ -101,17 +102,22 @@ return function(M, map)
   for i = 1, #p, 4 do box(p[i] - 0.1, p[i + 1] - 0.1, p[i + 2], p[i] + 0.1, p[i + 1] + 0.1, p[i + 2] + p[i + 3], 2) end
   p = map.hpole or {}
   for i = 1, #p, 5 do hpole(p[i], p[i + 1], p[i + 2], p[i + 3], p[i + 4]) end
+  -- frames: one object for render (one view test, one transform for its 16 lines, like a gate); its
+  -- poles and beams are hidden collision boxes
   p = map.frame or {}
   for i = 1, #p, 5 do
     local x, y, w, d, h = p[i], p[i + 1], p[i + 2] / 2, p[i + 3] / 2, p[i + 4]
+    local n = W.ne + 1
+    W.ne, W.ex[n], W.ey[n], W.ew[n], W.ed[n], W.eh[n] = n, x, y, 2 * w, 2 * d, h
+    W.er[n] = sqrt(4 * w * w + 4 * d * d + h * h) / 2
     for k = 1, 4 do
       local px, py = x + (k < 3 and -w or w), y + (k % 2 * 2 - 1) * d
-      box(px - 0.1, py - 0.1, 0, px + 0.1, py + 0.1, h, 2)
+      box(px - 0.1, py - 0.1, 0, px + 0.1, py + 0.1, h, 0)
     end
     for f = 1, 3 do
       local z = h * f / 3
-      hpole(x, y - d, z, 0, 2 * w) hpole(x, y + d, z, 0, 2 * w)
-      hpole(x - w, y, z, 1, 2 * d) hpole(x + w, y, z, 1, 2 * d)
+      hpole(x, y - d, z, 0, 2 * w, 0) hpole(x, y + d, z, 0, 2 * w, 0)
+      hpole(x - w, y, z, 1, 2 * d, 0) hpole(x + w, y, z, 1, 2 * d, 0)
     end
   end
   p = map.tube or {}

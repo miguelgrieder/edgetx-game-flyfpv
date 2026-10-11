@@ -21,7 +21,7 @@ M.ANGLE_GAIN = 6 -- angle mode: deg/s of correction per deg of error
 -- and the stars of the sky (unit directions)
 local W = { x1 = {}, y1 = {}, z1 = {}, x2 = {}, y2 = {}, z2 = {}, kind = {}, rad = {}, mx = {}, my = {}, mz = {}, nb = 0, nv = 0, gx = {}, gy = {}, ga = {}, ng = 0,
   tx = {}, ty = {}, tz = {}, ta = {}, tl = {}, ts = {}, nt = 0, sx = {}, sy = {}, sz = {}, ns = 0,
-  kx = {}, ky = {}, kz = {}, ks = {}, nk = 0, sun = false, sky = false }
+  kx = {}, ky = {}, kz = {}, ks = {}, nk = 0, ex = {}, ey = {}, ew = {}, ed = {}, eh = {}, er = {}, ne = 0, sun = false, sky = false }
 local NEARB, nnear = {}, 0 -- boxes close enough to touch during this frame
 M.W = W
 

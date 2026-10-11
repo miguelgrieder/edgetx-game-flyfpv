@@ -102,13 +102,15 @@ T.test("floating boxes and poles, tunnels, chimneys, roofs and stars build their
   T.eq(W2.nb, 2) T.eq(W2.kind[1], 3) T.eq(W2.kind[2], 3)
   T.near(W2.x1[1], -3) T.near(W2.x2[1], 3) T.near(W2.y1[1], 9.9) T.near(W2.z2[1], 5.1)
   T.near(W2.y1[2], 16) T.near(W2.y2[2], 24) T.near(W2.x1[2], 2.9)
-  -- a frame: 4 corner poles to the top, then 3 squares of 4 horizontal poles (a third, two thirds, top)
+  -- a frame: one object to draw, and hidden collision boxes: 4 corner poles to the top, then 3 squares of
+  -- 4 horizontal poles (a third, two thirds, the top)
   local _, f3 = setupMap({ frame = { 0, 20, 6, 4, 9 } })
   local W3 = f3.W
-  T.eq(W3.nb, 4 + 3 * 4)
-  T.eq(W3.kind[1], 2) T.near(W3.mx[1], -3) T.near(W3.my[1], 22) T.eq(W3.z2[1], 9)
-  T.eq(W3.kind[5], 3) T.near(W3.mz[5], 3) T.near(W3.x2[5] - W3.x1[5], 6) T.near(W3.my[5], 18)
-  T.near(W3.y2[7] - W3.y1[7], 4) T.near(W3.mx[8], 3) T.near(W3.mz[16], 9)
+  T.eq(W3.ne, 1) T.eq(W3.nv, 0) T.eq(W3.nb, 4 + 3 * 4)
+  T.eq(W3.ex[1], 0) T.eq(W3.ey[1], 20) T.eq(W3.ew[1], 6) T.eq(W3.ed[1], 4) T.eq(W3.eh[1], 9)
+  T.eq(W3.kind[1], 0) T.near(W3.x1[1], -3.1) T.near(W3.y2[1], 22.1) T.eq(W3.z2[1], 9)
+  T.near(W3.z1[5], 2.9) T.near(W3.x2[5] - W3.x1[5], 6) T.near(W3.y1[5], 17.9)
+  T.near(W3.y2[7] - W3.y1[7], 4) T.near(W3.x1[8], 2.9) T.near(W3.z2[16], 9.1)
   for k = 1, 20 do
     local x, y, z = W.sx[k], W.sy[k], W.sz[k]
     T.near(x * x + y * y + z * z, 1, 1e-9)

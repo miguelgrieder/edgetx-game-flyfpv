@@ -131,3 +131,17 @@ T.test("a horizontal pole is one line, along x or along y", function()
     T.eq(n - r.draw(0), 1, "axis " .. a)
   end
 end)
+
+T.test("a frame is drawn whole: 4 corner poles and 3 squares of 4 beams", function()
+  local h = T.H.new({ sd = "t_render_f" })
+  local c, f, r = h.config, h.flight, h.render
+  c.defaults() c.v.CAMERA, c.v.HUD = 0, 0
+  f.load({ grid = 10, spawn = { 0, 0, 0 }, frame = { 0, 40, 6, 6, 9 } }) -- far enough to be all in view
+  f.setup() f.spawn()
+  f.pz, f.ground = 4.5, false
+  lcd.clear()
+  local n = r.draw(0)
+  f.load({ grid = 10, spawn = { 0, 0, 0 } })
+  lcd.clear()
+  T.eq(n - r.draw(0), 16)
+end)
