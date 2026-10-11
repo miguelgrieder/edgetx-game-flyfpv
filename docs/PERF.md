@@ -1,5 +1,12 @@
 # Performance and memory
 
+> **Update (settings out of flight):** the settings menu's items (ranges, labels, defaults) moved from config
+> to items.lua, loaded for the menus and the .cfg and dropped while flying, where only config.v is read.
+> Flying heap with stripped bytecode like the radio's, PC 64-bit: CITY 93.1 -> 86.8 KB, METRO 102.4 -> 96.1 KB.
+> Tried and dropped: starting the far-to-near sort from last frame's order (on smooth flights it cost more
+> than the sort it saved: 10.0k vs 9.9k instructions per frame). Rendering allocates nothing per frame (the
+> ~2 KB seen after a full GC is the Lua stack growing back, not garbage).
+
 > **Update (v2.1, speed round):** Lua instructions per frame, mean over a scan of camera poses on all 9 maps
 > (`lua5.2 tools/bench.lua`, lcd calls swapped for an empty C function as on the radio): render 9163 -> 6260
 > (-32 %), sum of each map's worst view 214k -> 156k (-27 %); physics at SIM SPEED 2.0 2665 -> 1750 (-34 %).

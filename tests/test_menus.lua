@@ -53,6 +53,7 @@ T.test("menus and flight are never loaded together; the map file is not kept", f
   T.eq(h.app.state(), 4)
   T.eq(h.app.loaded("menus"), false) T.eq(h.app.loaded("flight"), true) T.eq(h.app.loaded("render"), true)
   T.eq(h.app.loaded("map_city"), false)
+  T.eq(h.config.ITEMS, nil) -- the settings items are dropped while flying
   h.wait(8)
   h.step(0, 0, -1024, 0, "exit")
   T.eq(h.app.state(), 6) -- pause
@@ -60,6 +61,22 @@ T.test("menus and flight are never loaded together; the map file is not kept", f
   h.step(0, 0, -1024, 0, "exit")
   T.eq(h.app.state(), 2)
   T.eq(h.app.loaded("flight"), false) T.eq(h.app.loaded("menus"), true)
+  -- back in the menus the items are loaded again: the settings still edit and save
+  h.wait(10)
+  h.step(0, 0, -1024, 0, "long")
+  h.step(0, 0, -1024, 0, "enter")
+  h.wait(8)
+  T.eq(h.app.state(), 3)
+  h.step(0, 0, -1024, 0, "next") -- SKY
+  h.step(0, 0, -1024, 0, "enter")
+  h.step(0, 0, -1024, 0, "prev") -- OFF -> NIGHT
+  h.step(0, 0, -1024, 0, "enter")
+  T.eq(h.config.v.SKY, 3)
+  h.step(0, 0, -1024, 0, "exit")
+  T.eq(h.app.state(), 2)
+  local f = h.S.realio.open(h.S.sdroot .. "/SCRIPTS/TOOLS/FLYFPV/flyfpv.cfg", "rb")
+  T.ok(f:read("*a"):find("SKY=3"), "saved after a flight")
+  f:close()
 end)
 
 T.test("arming needs the throttle low; then it flies; a crash respawns", function()
@@ -108,30 +125,30 @@ T.test("after an update each module is recompiled once, so an old .luac can't ou
   end
   local h = T.H.new({ sd = "t_stamp", files = { [B] = "v9-1\n" } })
   fly(h)
-  T.eq(modes(h), "config:btc menus:btc flight:btc map_city:btc world:btc render:btc solid:btc wire:btc")
+  T.eq(modes(h), "config:btc items:btc menus:btc flight:btc map_city:btc world:btc render:btc solid:btc wire:btc")
   local f = h.S.realio.open(h.S.sdroot .. C, "rb")
   local done = f:read("*a")
   f:close()
-  T.eq(done, "v9-1\nconfig\nmenus\nflight\nmap_city\nworld\nrender\nsolid\nwire\n")
+  T.eq(done, "v9-1\nconfig\nitems\nmenus\nflight\nmap_city\nworld\nrender\nsolid\nwire\n")
   -- next start, same build: the .luac files are used
   local h2 = T.H.new({ sd = "t_stamp2", files = { [B] = "v9-1\n", [C] = done } })
   fly(h2)
-  T.eq(modes(h2), "config:bt menus:bt flight:bt map_city:bt world:bt render:bt solid:bt wire:bt")
+  T.eq(modes(h2), "config:bt items:bt menus:bt flight:bt map_city:bt world:bt render:bt solid:bt wire:bt")
   -- a new build: recompiled again
   local h3 = T.H.new({ sd = "t_stamp3", files = { [B] = "v9-2\n", [C] = done } })
-  T.eq(modes(h3), "config:btc menus:btc")
+  T.eq(modes(h3), "config:btc items:btc menus:btc")
   -- no build file (running from src/): plain loads
   local h4 = T.H.new({ sd = "t_stamp4" })
-  T.eq(modes(h4), "config:bt menus:bt")
+  T.eq(modes(h4), "config:bt items:bt menus:bt")
 end)
 
 T.test("a new build compiles its modules one per frame before the menus load, then flies from the .luac", function()
   local B = "/SCRIPTS/TOOLS/FLYFPV/build.txt"
   local h = T.H.new({ sd = "t_prep", files = { [B] = "v9-1\nconfig\nmenus\nflight\nrender\nsolid\nmap_city\nworld\nwire\n" } })
   local function modes() return table.concat(h.S.loadModes, " ") end
-  T.eq(modes(), "config:btc") -- nothing else loaded yet: each compile has the memory to itself
+  T.eq(modes(), "config:btc items:btc") -- only what reads the .cfg: each compile has the memory to itself
   h.wait(8)
-  T.eq(modes(), "config:btc menus:btc flight:btc render:btc solid:btc map_city:btc world:btc wire:btc menus:bt")
+  T.eq(modes(), "config:btc items:btc menus:btc flight:btc render:btc solid:btc map_city:btc world:btc wire:btc menus:bt")
   h.wait(4)
   T.eq(h.app.state(), 2)
   h.step(0, 0, -1024, 0, "enter")

@@ -56,7 +56,8 @@ function M.title()
 end
 
 M.MENU = {} -- config items + EXIT
-for i = 1, #config.ITEMS do M.MENU[i] = config.ITEMS[i] end
+local items = config.items()
+for i = 1, #items do M.MENU[i] = items[i] end
 M.MENU[#M.MENU + 1] = { name = "EXIT", action = "exit" }
 local PAGES = math.ceil(#M.MENU / 5)
 

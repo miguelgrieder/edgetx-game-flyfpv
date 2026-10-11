@@ -84,7 +84,7 @@ end
 
 local function flightMode()
   if menus then
-    loaded.menus, menus = nil, nil
+    loaded.menus, menus, config.ITEMS = nil, nil, nil -- the settings items too: flight reads config.v
     collectgarbage()
   end
   if not flight then
