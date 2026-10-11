@@ -279,6 +279,8 @@ local function objects()
     elseif i < 0 then gate(-i, pat)
     elseif K[i] == 2 then -- int
       vline(MX[i], MY[i], Z1[i], Z2[i], pat) -- pole
+    elseif RAD[i] * RAD[i] * 1600 < DST[k] then -- F = 40: under a pixel across, so a dot like a pole
+      vline(MX[i], MY[i], Z1[i], Z2[i], SOLID) -- (a solid box costs ~1.8k instructions however small)
     else
       solid.outline(i)
       rows = rows + solid.erase(top)
