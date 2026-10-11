@@ -6,6 +6,7 @@ local M = {}
 
 M.saveOk = true
 M.sel, M.editing = 1, false
+M.tsel = 1 -- the title's menu: 1 FLY, 2 SETTINGS, 3 EXIT
 
 local function center(y, s, flags)
   lcd.drawText(64, y, s, (flags or 0) + CENTER)
@@ -41,18 +42,19 @@ function M.change(it, dir)
   if it.key == "QUAD" then v.CAMERA = config.QUADS[nv].cam end
 end
 
+local TITLE_ITEMS = { "FLY", "SETTINGS", "EXIT" }
+
 function M.title()
   local v = config.v
   center(3, "FLYFPV", DBLSIZE)
   lcd.drawText(127, 0, config.VERSION, SMLSIZE + RIGHT)
   center(21, M.saveOk and config.MAPS[v.MAP] .. "  " .. config.QUADS[v.QUAD].name .. "  " .. (v.MODE == 2 and "ANGLE" or "ACRO")
     or "NO SAVE")
-  -- a little horizon with a quad crosshair
-  lcd.drawLine(30, 38, 98, 34, SOLID, FORCE)
-  lcd.drawLine(61, 33, 67, 33, SOLID, FORCE)
-  lcd.drawLine(64, 30, 64, 36, SOLID, FORCE)
-  center(46, "ENT:FLY  RTN:EXIT")
-  center(56, "HOLD ENT: SETTINGS")
+  -- a menu like every EdgeTX tool's (the scroll wheel moves, ENT picks), so SETTINGS is in plain sight
+  for i = 1, 3 do
+    local y, s = 19 + 11 * i, TITLE_ITEMS[i]
+    if i == M.tsel then boxed(y, s) else center(y + 2, s) end
+  end
 end
 
 M.MENU = {} -- config items + EXIT

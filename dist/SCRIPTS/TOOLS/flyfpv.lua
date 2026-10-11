@@ -116,6 +116,7 @@ local function go(s)
   state = s
   ignoreUntil = getTime() + 30
   if s >= ARM then flightMode() else menuMode() end
+  if s == TITLE then menus.tsel = 1 end -- back on the title, ENT flies again
   if s == ARM then
     flight.spawn()
     count = 0
@@ -134,12 +135,20 @@ end
 
 local function update(e, steps)
   if state == TITLE then
+    -- the menu (FLY, SETTINGS, EXIT); holding ENT still opens the settings as a shortcut
     if isLong(e) then
       killEvents(e)
       eatEnter = true
       menus.sel, menus.editing = 1, false
       go(SETTINGS)
-    elseif isEnter(e) then go(ARM)
+    elseif isNext(e) then menus.tsel = menus.tsel % 3 + 1
+    elseif isPrev(e) then menus.tsel = (menus.tsel + 1) % 3 + 1
+    elseif isEnter(e) then
+      if menus.tsel == 1 then go(ARM)
+      elseif menus.tsel == 2 then
+        menus.sel, menus.editing = 1, false
+        go(SETTINGS)
+      else return 1 end
     elseif isExit(e) then return 1 end
   elseif state == SETTINGS then
     local ev = isNext(e) and "next" or isPrev(e) and "prev" or isEnter(e) and "enter" or isExit(e) and "exit"

@@ -41,7 +41,7 @@ disarm, better power the model off, before starting FlyFPV.
 
 | where | input | action |
 |---|---|---|
-| title | ENT · hold ENT · RTN | fly · settings · exit |
+| title | scroll · ENT · RTN | a menu: FLY / SETTINGS / EXIT, ENT picks (hold ENT: settings too) · exit |
 | arming | throttle | **throttle low to arm** (like a real quad); RTN back to the title |
 | flying | sticks | Ail = roll, Ele = pitch, Rud = yaw, Thr = thrust; RTN = pause |
 | pause | roller / PAGE, ENT | RESUME · RESPAWN · QUIT (RTN also quits) |
@@ -100,7 +100,7 @@ see get their edges drawn. Near objects have solid edges, far ones dotted; gates
 right). DEBUG adds the live frame rate (FPS, 20 is the most an EdgeTX script can get) and the Lua memory in KB at the
 bottom left.
 
-## Settings (hold ENT on the title; saved to `/SCRIPTS/TOOLS/FLYFPV/flyfpv.cfg`)
+## Settings (SETTINGS on the title, or hold ENT; saved to `/SCRIPTS/TOOLS/FLYFPV/flyfpv.cfg`)
 
 | setting | range | default |
 |---|---|---|

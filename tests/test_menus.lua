@@ -40,6 +40,24 @@ T.test("settings: edit values, a new quad brings its camera angle, saved on exit
   T.eq(h2.config.v.RP_EXPO, 35)
 end)
 
+T.test("title menu: FLY by default, scroll to SETTINGS or EXIT and press ENT", function()
+  local h = T.H.new({ sd = "t_title" })
+  toTitle(h)
+  T.eq(h.menus.tsel, 1)
+  h.step(0, 0, -1024, 0, "next")
+  T.eq(h.menus.tsel, 2)
+  h.step(0, 0, -1024, 0, "enter")
+  T.eq(h.app.state(), 3) -- settings
+  h.wait(8)
+  h.step(0, 0, -1024, 0, "exit")
+  T.eq(h.app.state(), 2)
+  T.eq(h.menus.tsel, 1) -- back on the title, ENT flies again
+  h.wait(10)
+  h.step(0, 0, -1024, 0, "prev") -- wraps round to EXIT
+  T.eq(h.menus.tsel, 3)
+  T.eq(h.step(0, 0, -1024, 0, "enter"), 1) -- the tool closes
+end)
+
 T.test("corrupted settings are ignored line by line", function()
   local h = T.H.new({ sd = "t_menus3", setup = T.H.cfg("garbage\nMAP=99\nQUAD=2\nRP_MAX=675\nMODE=2\n") })
   T.eq(h.config.v.MAP, 1) T.eq(h.config.v.QUAD, 2) T.eq(h.config.v.RP_MAX, 670) T.eq(h.config.v.MODE, 2)
