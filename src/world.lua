@@ -3,7 +3,8 @@
 -- { grid, spawn = {x, y, hdg}, box = {x, y, w, d, h, ...},
 -- pole = {x, y, h, ...}, gate = {x, y, axis, ...}, fbox = {x, y, z, w, d, h, ...} (floating box, z = its
 -- bottom), fpole = {x, y, z, h, ...}, hpole = {x, y, z, axis, length, ...} (horizontal, centred on x, y, z;
--- axis 0 along x, 1 along y), tube = {x, y, z, axis, length, side, ...}, roof = {x, y, z, side,
+-- axis 0 along x, 1 along y), frame = {x, y, w, d, h, ...} (a building of poles: 4 corner poles and a
+-- square of horizontal poles at a third, two thirds and the top), tube = {x, y, z, axis, length, side, ...}, roof = {x, y, z, side,
 -- hole, ...}, sky = "day" | "night", stars = count (night), clouds = {azimuth, elevation, size, ...} and
 -- sun = {azimuth, elevation} (day; degrees, azimuth clockwise from north), far = view distance in m
 -- (default render.FAR: big maps see less, draw less) }
@@ -61,6 +62,13 @@ local function tube(x, y, z, a, l, s)
   end
 end
 
+-- a horizontal pole centred on x, y, z, length l, axis 0 along x, 1 along y: kind 3, drawn as one line
+local function hpole(x, y, z, a, l)
+  l = l / 2
+  if a == 0 then box(x - l, y - 0.1, z - 0.1, x + l, y + 0.1, z + 0.1, 3) -- int
+  else box(x - 0.1, y - l, z - 0.1, x + 0.1, y + l, z + 0.1, 3) end
+end
+
 -- a roof with a square hole: side s, hole side o, 0.3 m thick at height z, on 4 poles at its corners
 local function roof(x, y, z, s, o)
   local S, h, z2 = s / 2, o / 2, z + 0.3
@@ -91,11 +99,20 @@ return function(M, map)
   for i = 1, #p, 3 do box(p[i] - 0.1, p[i + 1] - 0.1, 0, p[i] + 0.1, p[i + 1] + 0.1, p[i + 2], 2) end
   p = map.fpole or {}
   for i = 1, #p, 4 do box(p[i] - 0.1, p[i + 1] - 0.1, p[i + 2], p[i] + 0.1, p[i + 1] + 0.1, p[i + 2] + p[i + 3], 2) end
-  p = map.hpole or {} -- kind 3: drawn as one line, like a pole lying down
+  p = map.hpole or {}
+  for i = 1, #p, 5 do hpole(p[i], p[i + 1], p[i + 2], p[i + 3], p[i + 4]) end
+  p = map.frame or {}
   for i = 1, #p, 5 do
-    local x, y, z, l = p[i], p[i + 1], p[i + 2], p[i + 4] / 2
-    if p[i + 3] == 0 then box(x - l, y - 0.1, z - 0.1, x + l, y + 0.1, z + 0.1, 3) -- int
-    else box(x - 0.1, y - l, z - 0.1, x + 0.1, y + l, z + 0.1, 3) end
+    local x, y, w, d, h = p[i], p[i + 1], p[i + 2] / 2, p[i + 3] / 2, p[i + 4]
+    for k = 1, 4 do
+      local px, py = x + (k < 3 and -w or w), y + (k % 2 * 2 - 1) * d
+      box(px - 0.1, py - 0.1, 0, px + 0.1, py + 0.1, h, 2)
+    end
+    for f = 1, 3 do
+      local z = h * f / 3
+      hpole(x, y - d, z, 0, 2 * w) hpole(x, y + d, z, 0, 2 * w)
+      hpole(x - w, y, z, 1, 2 * d) hpole(x + w, y, z, 1, 2 * d)
+    end
   end
   p = map.tube or {}
   for i = 1, #p, 6 do tube(p[i], p[i + 1], p[i + 2], p[i + 3], p[i + 4], p[i + 5]) end
