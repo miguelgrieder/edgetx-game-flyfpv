@@ -1,5 +1,6 @@
 -- OVAL: a fast race loop, 50 x 150 m. Up the west straight (gate, tunnel, gate), round the north end,
--- down the east straight (gate, a floating ring, gates), round the south end back to the start. A gantry
+-- down the east straight (gate, a floating ring, gates), round the south end back to the start. Each
+-- obstacle sits a few metres to the side of the one before, so the next is never dead ahead. A gantry
 -- with start lights over the start, a control tower of poles with its cab in the infield, floodlights on
 -- the four corners.
 -- tube = x, y, z, axis, length, side (axis 0 along y, 1 along x; length 0 = a ring); hpole = x, y, z,
@@ -9,10 +10,10 @@ return {
   grid = 10,
   spawn = { -25, 5, 0 },
   gate = {
-    -25, 20, 0, -25, 100, 0, -12, 128, 1, 12, 128, 1, 25, 100, 0, 25, 60, 0, 25, 20, 0,
-    12, -8, 1, -12, -8, 1,
+    -27, 20, 0, -27, 100, 0, -12, 131, 1, 12, 125, 1, 27, 100, 0, 27, 60, 0, 23, 20, 0,
+    12, -11, 1, -12, -5, 1,
   },
-  tube = { -25, 60, 0.5, 0, 20, 3, 25, 80, 4, 0, 0, 3 },
+  tube = { -22, 60, 0.5, 0, 20, 3, 23, 80, 4, 0, 0, 3 },
   pole = { 0, 120, 8, 0, 0, 8, -25, 135, 10, 25, 135, 10, 25, -15, 10, -25, -15, 10, -- floodlights
     -31, 10, 7, -19, 10, 7 },                                        -- the gantry's legs
   box = { 0, 60, 6, 70, 3 },
