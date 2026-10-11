@@ -1,8 +1,10 @@
 -- SKY: a race in the air. Floating rings climbing north, a high tunnel east, a chimney to dive down (it
 -- stops 2 m above the ground: exit under it), a roof with a hole high on its poles to fly up through, and
--- platforms to go over and under on the way back.
+-- platforms to go over and under on the way back. A high wire between two tall masts, a square hoop of
+-- poles, and a scaffold of poles to dive through its floors.
 -- fbox = x, y, bottom, w, d, h; tube = x, y, z, axis, length, side (axis 0 along y, 1 along x, 2 up; length
--- 0 = a ring); roof = x, y, height, side, hole
+-- 0 = a ring); roof = x, y, height, side, hole; hpole = x, y, z, axis (0 along x, 1 along y), length;
+-- frame = x, y, w, d, h
 return {
   grid = 10,
   spawn = { 0, 0, 0 },
@@ -12,7 +14,9 @@ return {
   },
   roof = { 60, 25, 16, 14, 5 },
   fbox = { 40, 0, 8, 10, 10, 2, 20, -10, 3, 10, 6, 1.5 },
-  fpole = { 0, 60, 4, 10, 30, 80, 2, 8 },
+  fpole = { 0, 60, 4, 10, 30, 80, 2, 8, 27, 60, 8, 6, 33, 60, 8, 6 }, -- ..., the hoop's sides
   gate = { 0, 8, 0 },
-  pole = { 50, 10, 6, 72, 80, 6 },
+  pole = { 50, 10, 6, 72, 80, 6, 20, 40, 16, 40, 40, 16 },           -- ..., the wire's masts
+  hpole = { 30, 40, 16, 0, 20, 30, 60, 8, 0, 6, 30, 60, 14, 0, 6 },  -- the wire, the hoop
+  frame = { 80, 50, 8, 8, 20 },                                      -- the scaffold
 }

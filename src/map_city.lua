@@ -1,10 +1,12 @@
 -- CITY: blocks with 8 m streets and an open square in the middle. A tunnel in the street between the two
 -- south-west blocks, a roof with a hole on four poles where the north-east block was, a chimney held in
 -- the air by four poles on top of the west tower (fly in under it), a pole on top of the 60 m east tower,
--- a walkway between the two north-west buildings.
+-- a walkway between the two north-west buildings. North of the city a building site: a frame of poles
+-- with a square of beams per floor (fly between the floors) and a crane over it, its hook hanging.
 -- box = x, y, width (x), depth (y), height; tube = x, y, z, axis, length, side (axis 0 along y, 2 up);
 -- roof = x, y, height, side, hole; fbox = x, y, bottom, w, d, h; fpole = x, y, bottom, height;
--- pole = x, y, height; gate = x, y, axis
+-- pole = x, y, height; gate = x, y, axis; hpole = x, y, z, axis (0 along x, 1 along y), length;
+-- frame = x, y, w, d, h
 return {
   grid = 10,
   spawn = { 0, 0, 0 },
@@ -15,8 +17,11 @@ return {
   },
   tube = { -9, 20, 0.5, 0, 10, 3, -18, 38, 29, 2, 8, 3 },
   roof = { 18, 56, 8, 10, 4 },
-  fpole = { -19.6, 36.4, 25, 4, -16.4, 36.4, 25, 4, -19.6, 39.6, 25, 4, -16.4, 39.6, 25, 4, 18, 38, 60, 6 },
+  fpole = { -19.6, 36.4, 25, 4, -16.4, 36.4, 25, 4, -19.6, 39.6, 25, 4, -16.4, 39.6, 25, 4, 18, 38, 60, 6,
+    22, 74, 24, 8 },                                                 -- the crane's hook cable
   fbox = { -9, 56, 6, 8, 3, 1.5 },
-  pole = { 0, 38, 8 },
+  pole = { 0, 38, 8, 10, 74, 32 },                                   -- the crane's mast
   gate = { 0, 9, 0 },
+  frame = { 0, 74, 10, 10, 24 },
+  hpole = { 14, 74, 32, 0, 24, 22, 74, 24, 1, 3 },                   -- the crane's jib, the hook
 }

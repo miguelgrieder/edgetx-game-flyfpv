@@ -1,14 +1,14 @@
 -- METRO: Manhattan. You start at the southern tip facing north up Broadway (x = 0), avenues 16 m wide at
 -- x = -32, 0, 32. Downtown the twin 60 m towers stand diagonally 6 m apart (a pole on the north one) and
 -- two blocks joined by a walkway, a stepped Empire State with a spire across Broadway from a roof with a
--- hole, and three small blocks. The Brooklyn Bridge runs east from the east avenue: two towers of
+-- hole, a building of poles north of it (fly between its floors), and three small blocks. The Brooklyn Bridge runs east from the east avenue: two towers of
 -- poles with thin bars across and suspenders along the deck, and beside it a small park with trees, a
 -- fountain and a chimney on four legs to fly up through. The Statue of Liberty
 -- stands off to the south-west on her star base: pedestal, robe, crown, torch held up.
 -- Every block is drawn, like the other maps (its worst view costs more than CITY's).
 -- box = x, y, width (x), depth (y), height; fbox = x, y, bottom, w, d, h; tube = x, y, z, axis, length, side;
 -- roof = x, y, height, side, hole; pole = x, y, height; fpole = x, y, bottom, height;
--- hpole = x, y, z, axis (0 along x, 1 along y), length
+-- hpole = x, y, z, axis (0 along x, 1 along y), length; frame = x, y, w, d, h
 return {
   grid = 16,
   spawn = { 0, 0, 0 },
@@ -35,6 +35,7 @@ return {
   },
   hpole = { 50, 16, 19.5, 1, 5, 70, 16, 19.5, 1, 5,               -- the bridge towers' bars
     44, 30, 3.6, 0, 2.4, 44, 30, 3.6, 1, 2.4, 52, 38, 3.6, 0, 2.4, 52, 38, 3.6, 1, 2.4 }, -- branches
+  frame = { 16, 96, 12, 12, 30 },                                   -- a building of poles
   roof = { 16, 72, 10, 14, 6 },
   tube = { 44, 38, 3, 2, 8, 4 },                                   -- the park's chimney
   pole = { 50, 13.6, 20, 50, 18.4, 20, 70, 13.6, 20, 70, 18.4, 20,  -- bridge towers

@@ -78,12 +78,12 @@ Sticks are read by function (`ail`, `ele`, `thr`, `rud`), so your radio's own st
 
 | MAP | what's there |
 |---|---|
-| CITY | blocks with 8 m streets and a square in the middle, a gate at the entrance; a tunnel in the street between two blocks, a roof with a hole on four poles where a block was, a chimney held in the air by four poles on top of a tower (fly in under it), a pole on top of a 60 m tower, a walkway between two buildings |
-| METRO | Manhattan: start at the southern tip facing up Broadway; twin 60 m towers standing diagonally (a pole on one), a stepped Empire State beside them, a roof with a hole across Broadway, two blocks joined by a walkway, three small blocks, the Brooklyn Bridge (towers of poles, suspenders) with a park beside it (trees, a fountain, a chimney on four legs to fly up through), the Statue of Liberty (crown, torch) |
-| SPACE | starry sky over a wide grid; floating blocks, a station, platforms, poles, tunnels, rings and a chimney at every height; a roof with a hole on tall poles |
-| T_OVAL | race: fast 50 × 150 m loop; gates, a tunnel on the west straight, a floating ring on the east one |
-| T_TECH | race: slalom, gates, under a low bridge, up through a chimney (enter from below), down through a roof's hole, back through a tunnel |
-| T_SKY | race in the air: rings climbing north, a high tunnel, a chimney to dive down (exit under it), a roof hole to fly up through, platforms |
+| CITY | blocks with 8 m streets and a square in the middle, a gate at the entrance; a tunnel in the street between two blocks, a roof with a hole on four poles where a block was, a chimney held in the air by four poles on top of a tower (fly in under it), a pole on top of a 60 m tower, a walkway between two buildings; north of it a building site: a frame of poles (fly between its floors) with a crane over it |
+| METRO | Manhattan: start at the southern tip facing up Broadway; twin 60 m towers standing diagonally (a pole on one), a stepped Empire State beside them, a roof with a hole across Broadway, two blocks joined by a walkway, three small blocks, the Brooklyn Bridge (towers of poles, suspenders) with a park beside it (trees, a fountain, a chimney on four legs to fly up through), the Statue of Liberty (crown, torch), a frame of poles north of the roof |
+| SPACE | starry sky over a wide grid; floating blocks, a station, platforms, poles, tunnels, rings and a chimney at every height; a roof with a hole on tall poles; a rocket beside a launch tower of poles, square hoops of poles to fly through |
+| T_OVAL | race: fast 50 × 150 m loop; gates, a tunnel on the west straight, a floating ring on the east one; a start gantry with start lights, a control tower of poles with its cab, floodlights |
+| T_TECH | race: slalom, gates, under a low bridge, up through a chimney (enter from below), down through a roof's hole, back through a tunnel; a low limbo bar, a frame of poles to thread between its floors |
+| T_SKY | race in the air: rings climbing north, a high tunnel, a chimney to dive down (exit under it), a roof hole to fly up through, platforms; a high wire between two masts, a square hoop, a scaffold of poles to dive through |
 
 Tunnels, rings and chimneys are see-through wire (like gates); their walls still stop you. Every map's busiest view
 costs about the same as CITY's (a test checks it with `tools/mapcost.lua`).
@@ -126,7 +126,8 @@ A map is a small file `src/map_<name>.lua` returning a table (all in metres; x e
 `box = {x, y, width, depth, height, ...}` (on the ground), `fbox = {x, y, bottom, width, depth, height, ...}`
 (floating), `pole = {x, y, height, ...}`, `fpole = {x, y, bottom, height, ...}`, `gate = {x, y, axis, ...}` (axis 0:
 fly through northward), `tube = {x, y, z, axis, length, side, ...}` (wire tunnel; axis 0 runs north, 1 east, 2 up =
-chimney; length 0 = a ring), `roof = {x, y, height, side, hole, ...}` (on 4 corner poles), `stars = count`,
+chimney; length 0 = a ring), `roof = {x, y, height, side, hole, ...}` (on 4 corner poles), `hpole = {x, y, z, axis, length, ...}` (a horizontal pole, one line; axis 0 along x, 1 along y),
+`frame = {x, y, width, depth, height, ...}` (corner poles with a square of beams at 1/3, 2/3 and the top), `stars = count`,
 `far = view distance`, `grid`, `spawn = {x, y, heading}`. Add it to `MAPS`/`MAPFILE` in `config.lua` and to
 `tools/build.lua`.
 
