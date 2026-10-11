@@ -1,5 +1,11 @@
 # Performance and memory
 
+> **Update (cheap pieces):** a solid box costs ~1.8-2k Lua instructions when in view (up to ~5.5k cut by the
+> near plane) however small it looks; a pole ~100. So: boxes under a pixel from the camera are drawn as a
+> line like a pole, and maps get horizontal poles (`hpole`, one line). METRO's thin details use them (bridge
+> bars, tree branches). Tried and dropped: the dot rule at 2 px instead of 1 (METRO's worst view went up,
+> 59k -> 65k: cheaper far boxes left room under the line budget for more near ones).
+
 > **Update (settings out of flight):** the settings menu's items (ranges, labels, defaults) moved from config
 > to items.lua, loaded for the menus and the .cfg and dropped while flying, where only config.v is read.
 > Flying heap with stripped bytecode like the radio's, PC 64-bit: CITY 93.1 -> 86.8 KB, METRO 102.4 -> 96.1 KB.
