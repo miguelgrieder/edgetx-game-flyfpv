@@ -153,7 +153,8 @@ return function(tr, seg2, seg3, NEAR, CX, CY, F, drawLine)
       end
     end
     if n < 3 then return end
-    for i = 1, n do PX[i], PY[i] = 64 + 40 * QX[i] / QZ[i], 32 - 40 * QY[i] / QZ[i] end -- CX, F, CY
+    local f = F
+    for i = 1, n do PX[i], PY[i] = 64 + f * QX[i] / QZ[i], 32 - f * QY[i] / QZ[i] end -- CX, CY
     for i = 1, n do
       local j = i % n + 1
       walk(PX[i], PY[i], PX[j], PY[j])
@@ -166,8 +167,8 @@ return function(tr, seg2, seg3, NEAR, CX, CY, F, drawLine)
     cpx, cpy, cpz, rx, ry, rz, ux, uy, uz, fx, fy, fz = a, b, c, d, e, f, g, h, i, j, k, l
   end
 
-  -- project box i and build its outline spans
-  function S.outline(i)
+  -- project box i and build its outline spans (nofill: only project it, for S.wire)
+  function S.outline(i, nofill)
     local W = flight.W
     local x1, y1, z1, x2, y2, z2 = W.x1[i], W.y1[i], W.z1[i], W.x2[i], W.y2[i], W.z2[i]
     -- one corner transformed; the others by adding the box's edges, which in camera space are the
@@ -190,12 +191,14 @@ return function(tr, seg2, seg3, NEAR, CX, CY, F, drawLine)
     -- a face is seen when the camera is on its outer side
     V1, V2, V3, V4, V5, V6 = cpx < x1, cpx > x2, cpy < y1, cpy > y2, cpz > z2, cpz < z1
     front = true
+    local f = F -- the focal length (FOV setting): a local, read once per box
     for k = 1, 8 do
       local z = VZ[k]
       if z < 0.05 then front = false break end -- NEAR (numbers, not upvalues: see render)
-      local inv = 40 / z -- F
+      local inv = f / z
       SX[k], SY[k] = 64 + VX[k] * inv, 32 - VY[k] * inv -- CX, CY
     end
+    if nofill then return end
     if front then
       -- the outline = the edges between a seen and an unseen face; each is on the left or the right
       -- side of the (convex) outline, so it only sets that side of the rows it crosses
@@ -278,6 +281,23 @@ return function(tr, seg2, seg3, NEAR, CX, CY, F, drawLine)
           local a, b = EB[e], EB[e + 1]
           seg3(VX[a], VY[a], VZ[a], VX[b], VY[b], VZ[b], pat)
         end
+      end
+    end
+  end
+
+  -- all 12 edges, see-through (SOLID BLDGS OFF; after S.outline(i, true))
+  function S.wire(pat)
+    if front then
+      seg2(SX[1], SY[1], SX[2], SY[2], pat) seg2(SX[2], SY[2], SX[3], SY[3], pat)
+      seg2(SX[3], SY[3], SX[4], SY[4], pat) seg2(SX[4], SY[4], SX[1], SY[1], pat)
+      seg2(SX[5], SY[5], SX[6], SY[6], pat) seg2(SX[6], SY[6], SX[7], SY[7], pat)
+      seg2(SX[7], SY[7], SX[8], SY[8], pat) seg2(SX[8], SY[8], SX[5], SY[5], pat)
+      seg2(SX[1], SY[1], SX[5], SY[5], pat) seg2(SX[2], SY[2], SX[6], SY[6], pat)
+      seg2(SX[3], SY[3], SX[7], SY[7], pat) seg2(SX[4], SY[4], SX[8], SY[8], pat)
+    else
+      for e = 1, 48, 4 do
+        local a, b = EB[e], EB[e + 1]
+        seg3(VX[a], VY[a], VZ[a], VX[b], VY[b], VZ[b], pat)
       end
     end
   end

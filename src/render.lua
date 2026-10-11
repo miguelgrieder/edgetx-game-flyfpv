@@ -10,16 +10,19 @@ local M = {}
 local floor, sin, cos, sqrt = math.floor, math.sin, math.cos, math.sqrt
 local drawLine = lcd.drawLine -- looked up once: it is called hundreds of times per frame
 local FORCE, SOLID, DOTTED = FORCE, SOLID, DOTTED -- globals are a table lookup each time
-M.F = 40 -- focal length in px: ~116 deg horizontal field of view
+-- focal length in px from the FOV setting (degrees across: 90, 100, 110, 116, 125); 40 = ~116 deg
+local FOCAL = { 64, 53.7, 44.8, 40, 33.3 }
+M.F = FOCAL[config.v.FOV or 4] or 40
 M.NEAR = 0.05 -- near plane (m)
 M.FAR = flight.far or 120 -- objects farther than this are skipped (m); a map can see less (map.far)
 if (config.v.VIEW or 0) > 0 then M.FAR = config.v.VIEW end -- VIEW DIST set in the settings (0: AUTO)
-M.SOLID_D = 40 -- nearer than this: solid lines, farther: dotted
+M.SOLID_D = config.v.SOLID_D or 40 -- nearer than this: solid lines, farther: dotted (SOLID DIST setting)
 M.GRID_N = 3 -- grid lines each side of the quad (farther lines pile up at the horizon)
 M.BUDGET = flight.budget or 400 -- max lcd calls per frame for the 3D view (edges + fill rows); a map for
--- faster radios can allow more (map.budget)
+-- faster radios can allow more (map.budget); LINE LIMIT in the settings overrides it (0: AUTO)
+if (config.v.LIMIT or 0) > 0 then M.BUDGET = config.v.LIMIT end
 local CX, CY, F, NEAR = 64, 32, M.F, M.NEAR
--- (the hottest lines write these as numbers, 64 32 40 0.05: in Lua an upvalue costs an instruction each
+-- (the hottest lines write these as numbers, 64 32 0.05, and F as a local read once: in Lua an upvalue costs an instruction each
 -- time it is read, a number in the code nothing)
 
 -- camera: position and basis (right, up, forward) in world coordinates
@@ -100,7 +103,8 @@ local function seg3(xa, ya, za, xb, yb, zb, pat)
     local t = (0.05 - zb) / (za - zb)
     xb, yb, zb = xb + (xa - xb) * t, yb + (ya - yb) * t, 0.05
   end
-  seg2(64 + 40 * xa / za, 32 - 40 * ya / za, 64 + 40 * xb / zb, 32 - 40 * yb / zb, pat)
+  local f = F
+  seg2(64 + f * xa / za, 32 - f * ya / za, 64 + f * xb / zb, 32 - f * yb / zb, pat)
 end
 M.seg3 = seg3
 
@@ -116,7 +120,7 @@ end
 -- from it (through the centre it stays straight). Out of view nothing is drawn (seg2 clips it all).
 -- Always solid: dotted it vanished among the dotted grid lines. Drawn before the objects, so buildings
 -- still hide it.
-M.BOW = 0.15
+M.BOW = ({ 0, 0.08, 0.15, 0.25 })[config.v.BOW or 3] or 0.15 -- HORIZON CURVE: OFF, LOW, MID, HIGH
 local HN = 8 -- curve segments
 local function curve(x0, y0, x1, y1)
   local dx, dy = x1 - x0, y1 - y0
@@ -144,7 +148,9 @@ end
 
 -- dotted ground grid around the quad, snapped to the grid size
 local function grid()
-  local S, N = flight.grid, M.GRID_N
+  local S, N, g = flight.grid, M.GRID_N, config.v.GRID or 1 -- GRID: 0 OFF, 1 ON, 2 DENSE (half the spacing)
+  if g == 0 then return end -- int
+  if g == 2 then S, N = S / 2, N * 2 end -- int
   local gx, gy = floor(px / S + 0.5) * S, floor(py / S + 0.5) * S
   local L = N * S
   -- low down, far lines squeeze into a band at the horizon: keep lines within ~15x the height
@@ -242,6 +248,7 @@ local function objects()
   local n = 0
   -- the boxes that are drawn come first in W (nv of them); the view test inline, it runs for every one
   local MX, MY, MZ, RAD, FAR = W.mx, W.my, W.mz, W.rad, M.FAR
+  local kx, ky, ff, wire3 = KX, KY, F * F, config.v.SOLID == 0 -- int; (locals: read once per frame)
   local crx, cry, crz, cux, cuy, cuz, cfx, cfy, cfz, cpx, cpy, cpz = rx, ry, rz, ux, uy, uz, fx, fy, fz, px, py, pz
   for i = 1, W.nv do
     local dx, dy, dz, r = MX[i] - cpx, MY[i] - cpy, MZ[i] - cpz, RAD[i]
@@ -251,7 +258,7 @@ local function objects()
       local d, far = cx * cx + cy * cy + cz * cz, FAR + r
       if d < far * far then
         local zz = cz > 0.05 and cz or 0.05
-        if (cx < 0 and -cx or cx) - r < zz * 1.6 and (cy < 0 and -cy or cy) - r < zz * 0.8 then -- KX, KY
+        if (cx < 0 and -cx or cx) - r < zz * kx and (cy < 0 and -cy or cy) - r < zz * ky then
           n = n + 1
           ORD[n], DST[n] = i, d
         end
@@ -332,8 +339,11 @@ local function objects()
         local ax, ay, az = tr(MX[i], Y1[i], MZ[i])
         seg3(ax, ay, az, ax + l * ry, ay + l * uy, az + l * fy, pat)
       end
-    elseif RAD[i] * RAD[i] * 1600 < DST[k] then -- F = 40: under a pixel across, so a dot like a pole
+    elseif RAD[i] * RAD[i] * ff < DST[k] then -- under a pixel across, so a dot like a pole
       vline(MX[i], MY[i], Z1[i], Z2[i], SOLID) -- (a solid box costs ~1.8k instructions however small)
+    elseif wire3 then -- SOLID BLDGS OFF: see-through, no fill (the fill is most of a box's cost)
+      solid.outline(i, true)
+      solid.wire(pat)
     else
       solid.outline(i)
       rows = rows + solid.erase(top)
@@ -371,7 +381,7 @@ function M.draw(thr)
   solid.camera(px, py, pz, rx, ry, rz, ux, uy, uz, fx, fy, fz)
   local W = flight.W
   if not wire and W.nt > 0 then wire = use("wire")(tr, seg3, VX, VY, VZ, CX, CY, F, basis, M) end
-  if not sky and W.sky then sky = use("sky")(seg2, drawLine, basis) end
+  if not sky and W.sky then sky = use("sky")(seg2, drawLine, basis, F) end
   if sky then
     local c, t = sky.draw()
     lines = lines + c

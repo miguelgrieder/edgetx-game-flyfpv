@@ -158,3 +158,43 @@ T.test("VIEW DIST: AUTO keeps the map's view distance, a number replaces it", fu
   h.flight.load({ grid = 10, spawn = { 0, 0, 0 }, far = 60, box = { 0, 30, 6, 6, 6 } })
   T.eq(h.render.FAR, 200)
 end)
+
+T.test("view settings: FOV, SOLID DIST, HORIZON and LINE LIMIT set the renderer; GRID OFF / DENSE", function()
+  local function renderer(cfg) -- the settings first: render reads them when it loads
+    local h = T.H.new({ sd = "t_render_s" })
+    h.config.defaults()
+    for k, v in pairs(cfg) do h.config.v[k] = v end
+    h.flight.load({ grid = 10, spawn = { 0, 0, 0 } })
+    return h.render
+  end
+  local r = renderer({ FOV = 1, SOLID_D = 70, BOW = 1, LIMIT = 150 })
+  T.eq(r.F, 64) T.eq(r.SOLID_D, 70) T.eq(r.BOW, 0) T.eq(r.BUDGET, 150)
+  local d = renderer({})
+  T.eq(d.F, 40) T.eq(d.SOLID_D, 40) T.eq(d.BOW, 0.15) T.eq(d.BUDGET, 400)
+  local function lines(grid)
+    local h = T.H.new({ sd = "t_render_g" .. grid })
+    h.config.defaults() h.config.v.GRID, h.config.v.HUD, h.config.v.CAMERA = grid, 0, 0
+    h.flight.load({ grid = 10, spawn = { 0, 0, 0 } }) h.flight.setup() h.flight.spawn()
+    h.flight.pz, h.flight.ground = 10, false
+    lcd.clear()
+    return h.render.draw(0)
+  end
+  local off, on, dense = lines(0), lines(1), lines(2)
+  T.ok(off < on and on < dense, off .. " < " .. on .. " < " .. dense)
+end)
+
+T.test("SOLID BLDGS OFF: a box is its 12 edges, see-through, with no fill", function()
+  local function draw(solid)
+    local h = T.H.new({ sd = "t_render_w" .. solid })
+    h.config.defaults() h.config.v.SOLID, h.config.v.HUD, h.config.v.GRID, h.config.v.CAMERA = solid, 0, 0, 0
+    h.flight.load({ grid = 10, spawn = { 0, 0, 0 }, box = { 0, 40, 6, 6, 6 } }) h.flight.setup() h.flight.spawn()
+    h.flight.pz, h.flight.ground = 8, false
+    lcd.clear()
+    local n = h.render.draw(0)
+    h.flight.load({ grid = 10, spawn = { 0, 0, 0 } })
+    lcd.clear()
+    return n - h.render.draw(0)
+  end
+  T.eq(draw(0), 12)
+  T.ok(draw(1) ~= 12, "solid: only its seen edges, and fill rows")
+end)

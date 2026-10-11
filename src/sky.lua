@@ -11,22 +11,22 @@ local fillRect, point = lcd.drawFilledRectangle, lcd.drawPoint
 local CLOUD = { -11, 0, -8, 4, -3, 7, 2, 5, 7, 7, 11, 0, -11, 0 }
 local NC = #CLOUD
 
-return function(seg2, drawLine, basis)
+return function(seg2, drawLine, basis, F)
   local S = {}
 
   -- returns the lcd calls made here that seg2 did not count, and the topmost row drawn on (64: none)
   function S.draw()
     local W = flight.W
     local rx, ry, rz, ux, uy, uz, fx, fy, fz = basis()
-    local top, calls = 64, 0
+    local top, calls, f = 64, 0, F -- f: the focal length (FOV setting) as a local
     -- stars: one pixel each
     local SX, SY, SZ = W.sx, W.sy, W.sz
     for k = 1, W.ns do
       local dx, dy, dz = SX[k], SY[k], SZ[k]
       local d = dx * fx + dy * fy + dz * fz
       if d > 0.1 then
-        local x = 64 + 40 * (dx * rx + dy * ry + dz * rz) / d + 0.5
-        local y = 32 - 40 * (dx * ux + dy * uy + dz * uz) / d + 0.5
+        local x = 64 + f * (dx * rx + dy * ry + dz * rz) / d + 0.5
+        local y = 32 - f * (dx * ux + dy * uy + dz * uz) / d + 0.5
         if x >= 0 and x < 128 and y >= 0 and y < 64 then
           x, y = x - x % 1, y - y % 1
           point(x, y, FORCE)
@@ -45,8 +45,8 @@ return function(seg2, drawLine, basis)
         local dx, dy, dz = KX[k], KY[k], KZ[k]
         local d = dx * fx + dy * fy + dz * fz
         if d > 0.2 then
-          local cx = 64 + 40 * (dx * rx + dy * ry + dz * rz) / d
-          local cy = 32 - 40 * (dx * ux + dy * uy + dz * uz) / d
+          local cx = 64 + f * (dx * rx + dy * ry + dz * rz) / d
+          local cy = 32 - f * (dx * ux + dy * uy + dz * uz) / d
           if cx > -30 and cx < 158 and cy > -20 and cy < 84 then
             local s = KS[k]
             local ax, ay
@@ -65,8 +65,8 @@ return function(seg2, drawLine, basis)
       local dx, dy, dz = W.sunx, W.suny, W.sunz
       local d = dx * fx + dy * fy + dz * fz
       if d > 0.2 then
-        local x = 64 + 40 * (dx * rx + dy * ry + dz * rz) / d + 0.5
-        local y = 32 - 40 * (dx * ux + dy * uy + dz * uz) / d + 0.5
+        local x = 64 + f * (dx * rx + dy * ry + dz * rz) / d + 0.5
+        local y = 32 - f * (dx * ux + dy * uy + dz * uz) / d + 0.5
         if x >= 8 and x <= 119 and y >= 8 and y <= 55 then
           x, y = x - x % 1, y - y % 1
           fillRect(x - 2, y - 1, 5, 3, FORCE)

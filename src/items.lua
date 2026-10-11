@@ -23,4 +23,10 @@ return {
   { key = "DEBUG", name = "DEBUG", lo = 0, hi = 1, def = 0, names = { "OFF", "ON" } },
   { key = "VIEW", name = "VIEW DIST", lo = 0, hi = 240, step = 20, def = 0 }, -- m; 0 AUTO: the map's own
   -- (less: faster on a slow radio, more: see the whole of a big map)
+  { key = "SOLID", name = "SOLID BLDGS", lo = 0, hi = 1, def = 1, names = { "OFF", "ON" } }, -- OFF: see-through, faster
+  { key = "SOLID_D", name = "SOLID DIST", lo = 10, hi = 100, step = 10, def = 40 }, -- m: nearer solid lines, farther dotted
+  { key = "FOV", name = "FOV", lo = 1, hi = 5, def = 4, names = { "90 DEG", "100 DEG", "110 DEG", "116 DEG", "125 DEG" } },
+  { key = "GRID", name = "GRID", lo = 0, hi = 2, def = 1, names = { "OFF", "ON", "DENSE" } },
+  { key = "BOW", name = "HORIZON", lo = 1, hi = 4, def = 3, names = { "FLAT", "LOW", "MID", "HIGH" } }, -- its lens curve
+  { key = "LIMIT", name = "LINE LIMIT", lo = 0, hi = 1200, step = 50, def = 0 }, -- lcd calls a frame; 0 AUTO: the map's
 }

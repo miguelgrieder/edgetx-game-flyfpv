@@ -116,6 +116,12 @@ bottom left.
 | HUD | ON / OFF | ON |
 | DEBUG | ON / OFF | OFF |
 | VIEW DIST | AUTO (the map's own: 120 m, SPACE 60, MEGA 160) / 20–240 m in 20 m steps: less is faster, more sees further | AUTO |
+| SOLID BLDGS | ON / OFF: OFF draws buildings see-through as wireframe, the biggest speed-up on a slow radio | ON |
+| SOLID DIST | 10–100 m: nearer lines are solid, farther ones dotted | 40 M |
+| FOV | 90 / 100 / 110 / 116 / 125 DEG across the screen | 116 DEG |
+| GRID | OFF / ON / DENSE (half the spacing): the ground grid | ON |
+| HORIZON | FLAT / LOW / MID / HIGH: the lens curve of the horizon | MID |
+| LINE LIMIT | AUTO (the map's: 400, MEGA 1200) / 50–1200 lcd calls per frame: lower keeps the frame rate steady in busy views but can leave out near objects | AUTO |
 
 ## Development
 
