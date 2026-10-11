@@ -13,6 +13,7 @@ local FORCE, SOLID, DOTTED = FORCE, SOLID, DOTTED -- globals are a table lookup 
 M.F = 40 -- focal length in px: ~116 deg horizontal field of view
 M.NEAR = 0.05 -- near plane (m)
 M.FAR = flight.far or 120 -- objects farther than this are skipped (m); a map can see less (map.far)
+if (config.v.VIEW or 0) > 0 then M.FAR = config.v.VIEW end -- VIEW DIST set in the settings (0: AUTO)
 M.SOLID_D = 40 -- nearer than this: solid lines, farther: dotted
 M.GRID_N = 3 -- grid lines each side of the quad (farther lines pile up at the horizon)
 M.BUDGET = flight.budget or 400 -- max lcd calls per frame for the 3D view (edges + fill rows); a map for

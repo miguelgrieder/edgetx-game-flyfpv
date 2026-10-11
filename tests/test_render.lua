@@ -145,3 +145,16 @@ T.test("a frame is drawn whole: 4 corner poles and 3 squares of 4 beams", functi
   lcd.clear()
   T.eq(n - r.draw(0), 16)
 end)
+
+T.test("VIEW DIST: AUTO keeps the map's view distance, a number replaces it", function()
+  local _, _, r = setup({ VIEW = 0 })
+  T.eq(r.FAR, 120)
+  local h = T.H.new({ sd = "t_render_view" })
+  h.config.defaults() h.config.v.VIEW = 0
+  h.flight.load({ grid = 10, spawn = { 0, 0, 0 }, far = 60, box = { 0, 30, 6, 6, 6 } })
+  T.eq(h.render.FAR, 60)
+  h = T.H.new({ sd = "t_render_view2" })
+  h.config.defaults() h.config.v.VIEW = 200
+  h.flight.load({ grid = 10, spawn = { 0, 0, 0 }, far = 60, box = { 0, 30, 6, 6, 6 } })
+  T.eq(h.render.FAR, 200)
+end)

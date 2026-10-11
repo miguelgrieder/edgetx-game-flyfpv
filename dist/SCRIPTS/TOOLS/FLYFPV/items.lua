@@ -21,4 +21,6 @@ return {
   { key = "Y_EXPO", name = "YAW EXPO", lo = 0, hi = 100, step = 5, def = 0 },
   { key = "HUD", name = "HUD", lo = 0, hi = 1, def = 1, names = { "OFF", "ON" } },
   { key = "DEBUG", name = "DEBUG", lo = 0, hi = 1, def = 0, names = { "OFF", "ON" } },
+  { key = "VIEW", name = "VIEW DIST", lo = 0, hi = 240, step = 20, def = 0 }, -- m; 0 AUTO: the map's own
+  -- (less: faster on a slow radio, more: see the whole of a big map)
 }

@@ -115,6 +115,7 @@ bottom left.
 | YAW CENTER, YAW MAX, YAW EXPO | same | 70 · 670 · 0.00 |
 | HUD | ON / OFF | ON |
 | DEBUG | ON / OFF | OFF |
+| VIEW DIST | AUTO (the map's own: 120 m, SPACE 60, MEGA 160) / 20–240 m in 20 m steps: less is faster, more sees further | AUTO |
 
 ## Development
 
