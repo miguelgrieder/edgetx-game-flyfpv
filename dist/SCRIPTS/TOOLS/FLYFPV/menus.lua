@@ -48,6 +48,38 @@ end
 
 local TITLE_ITEMS = { "FLY", "SETTINGS", "EXIT" }
 
+-- the title's sides: a race gate with a flag and a quad flying through it (left), a night skyline (right)
+local function quad(x, y)
+  lcd.drawFilledRectangle(x - 1, y - 1, 3, 3, FORCE)
+  for sx = -1, 1, 2 do
+    for sy = -1, 1, 2 do
+      lcd.drawLine(x + 2 * sx, y + 2 * sy, x + 4 * sx, y + 4 * sy, SOLID, FORCE)
+      local cx, cy = x + 5 * sx, y + 5 * sy -- a prop
+      lcd.drawPoint(cx - 1, cy, FORCE) lcd.drawPoint(cx + 1, cy, FORCE)
+      lcd.drawPoint(cx, cy - 1, FORCE) lcd.drawPoint(cx, cy + 1, FORCE)
+    end
+  end
+end
+local function sides()
+  lcd.drawLine(4, 37, 4, 63, SOLID, FORCE) -- the gate
+  lcd.drawLine(30, 37, 30, 63, SOLID, FORCE)
+  lcd.drawLine(4, 37, 30, 37, SOLID, FORCE)
+  lcd.drawLine(4, 30, 4, 36, SOLID, FORCE) -- its flag
+  lcd.drawFilledRectangle(5, 30, 6, 4, FORCE)
+  quad(20, 50)
+  lcd.drawLine(7, 47, 11, 47, SOLID, FORCE) -- speed lines
+  lcd.drawLine(6, 50, 12, 50, SOLID, FORCE)
+  lcd.drawLine(7, 53, 11, 53, SOLID, FORCE)
+  lcd.drawRectangle(95, 46, 8, 18, FORCE) -- the skyline
+  lcd.drawRectangle(105, 36, 9, 28, FORCE)
+  lcd.drawRectangle(116, 50, 10, 14, FORCE)
+  lcd.drawLine(109, 29, 109, 35, SOLID, FORCE) -- an antenna with its light
+  lcd.drawPoint(109, 28, FORCE)
+  for y = 39, 60, 4 do lcd.drawPoint(108, y, FORCE) lcd.drawPoint(111, y, FORCE) end -- lit windows
+  for y = 49, 60, 4 do lcd.drawPoint(98, y, FORCE) end
+  for y = 53, 60, 4 do lcd.drawPoint(119, y, FORCE) lcd.drawPoint(122, y, FORCE) end
+  lcd.drawPoint(92, 31, FORCE) lcd.drawPoint(121, 40, FORCE) -- stars
+end
 
 function M.title()
   local v = config.v
@@ -55,6 +87,7 @@ function M.title()
   lcd.drawText(127, 0, config.VERSION, SMLSIZE + RIGHT)
   center(21, M.saveOk and config.MAPS[v.MAP] .. "  " .. config.QUADS[v.QUAD].name .. "  " .. (v.MODE == 2 and "ANGLE" or "ACRO")
     or "NO SAVE")
+  sides()
   -- a menu like every EdgeTX tool's (the scroll wheel moves, ENT picks), so SETTINGS is in plain sight
   for i = 1, 3 do
     local y, s = 19 + 11 * i, TITLE_ITEMS[i]
