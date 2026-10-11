@@ -283,15 +283,20 @@ local function objects()
       ORD[n], DST[n] = -W.ng - W.nt - i, cx * cx + cy * cy + cz * cz
     end
   end
-  -- insertion sort, farthest first (no table library on the radio)
-  for i = 2, n do
-    local o, d = ORD[i], DST[i]
-    local j = i - 1
-    while j >= 1 and DST[j] < d do
-      ORD[j + 1], DST[j + 1] = ORD[j], DST[j]
-      j = j - 1
+  -- Shell sort (gaps 13, 4, 1), farthest first: no table library on the radio, and with 50+ objects in
+  -- view a plain insertion sort's shifts grow with n * n
+  local g = 13
+  while g > 0 do
+    for i = g + 1, n do
+      local o, d = ORD[i], DST[i]
+      local j = i - g
+      while j >= 1 and DST[j] < d do
+        ORD[j + g], DST[j + g] = ORD[j], DST[j]
+        j = j - g
+      end
+      ORD[j + g], DST[j + g] = o, d
     end
-    ORD[j + 1], DST[j + 1] = o, d
+    g = (g - 1) / 3
   end
   local far2 = M.SOLID_D * M.SOLID_D
   for k = 1, n do
